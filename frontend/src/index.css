@@ -1,0 +1,200 @@
+:root {
+  --bg-color: #1e1e1e; /* VS Code Dark Background */
+  --sidebar-bg: #252526;
+  --text-main: #d4d4d4; /* Light gray text */
+  --accent-blue: #569cd6; /* Keyword blue */
+  --accent-green: #4ec9b0; /* Class green */
+  --accent-orange: #ce9178; /* String orange */
+  --accent-red: #f14c4c; /* Error red */
+  --border-color: #3c3c3c;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  /* Use a monospace font to feel like a code editor */
+  font-family: "Fira Code", "Courier New", Courier, monospace;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- App Layout --- */
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* --- Sidebar (Stats) --- */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+}
+
+.stat-block {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  color: var(--accent-blue);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap; /* CRITICAL: Forces "DAYS REMAINING" to stay on one line */
+}
+
+.stat-value {
+  color: var(--accent-green);
+  font-size: 1.25rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden; /* CRITICAL: Hides text that overflows the 280px width */
+  text-overflow: ellipsis; /* CRITICAL: Adds "..." to the end of overflowing text */
+}
+
+/* --- Main Editor (Game Window) --- */
+.main-window {
+  flex-grow: 1;
+  padding: 2rem 2rem 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+  overflow: hidden;
+}
+
+.header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.restart-btn {
+  background-color: transparent;
+  color: var(--accent-orange);
+  border: 1px solid var(--accent-orange);
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.restart-btn:hover:not(:disabled) {
+  background-color: var(--accent-orange);
+  color: var(--bg-color);
+}
+
+.title {
+  color: var(--accent-blue);
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* --- Terminal Output Area --- */
+.game-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* CRITICAL: Tells flexbox it is allowed to shrink, which forces the terminal to scroll instead of pushing the footer off screen */
+}
+
+.terminal-output {
+  flex-grow: 1;
+  color: var(--text-main);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  padding-right: 1rem; /* Adds a little breathing room next to the scrollbar */
+}
+
+/* --- Action Buttons --- */
+.button-group {
+  display: flex;
+  justify-content: center; /* Centers the buttons */
+  flex-wrap: wrap; /* Ensures they wrap neatly on small screens */
+  gap: 1rem;
+  margin-top: 1rem;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.action-btn {
+  background-color: transparent;
+  color: var(--accent-green);
+  border: 1px solid var(--accent-green);
+  padding: 0.75rem 1.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover:not(:disabled) {
+  background-color: var(--accent-green);
+  color: var(--bg-color);
+}
+
+.action-btn:disabled {
+  color: #555;
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+.action-btn.fly {
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.action-btn.fly:hover:not(:disabled) {
+  background-color: var(--accent-blue);
+  color: var(--bg-color);
+}
+
+/* --- Footer --- */
+.footer {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+  font-size: 0.85rem;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+}
+
+.footer a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
