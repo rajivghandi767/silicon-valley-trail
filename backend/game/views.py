@@ -285,6 +285,11 @@ def take_action(request):
 
                 turn_message += f"\n\n> On arrival in {next_location.name}, {event_text}"
 
+        # --- CLAMPING BLOCK ---
+        # Stats never break their logical boundaries before saving
+        game_state.morale = max(0, min(100, game_state.morale))
+        game_state.bugs = max(0, game_state.bugs)
+
         game_state.save()
 
         # Check for Win/Loss - Display Result to User

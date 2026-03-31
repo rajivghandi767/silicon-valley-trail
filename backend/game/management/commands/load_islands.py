@@ -18,7 +18,7 @@ class Command(BaseCommand):
             {"name": "Anguilla 🇦🇮", "latitude": 18.2206, "longitude": -63.0686,
                 "description": "An OECS territory that owns the '.ai' top-level domain. Their economy literally scales with the artificial intelligence boom. Pure passive income."},
 
-            {"name": "St. Eustatius (Statia)", "latitude": 17.4890, "longitude": -62.9736,
+            {"name": "St. Eustatius", "latitude": 17.4890, "longitude": -62.9736,
              "description": "The original decentralized exchange. In the 1700s, this tiny free port bypassed global blockades to supply the American Revolution. The perfect node to secure some shadow funding."},
 
             {"name": "St. Barts 🇧🇱", "latitude": 17.9000, "longitude": -62.8333,
