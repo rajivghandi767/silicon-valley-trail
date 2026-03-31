@@ -78,6 +78,23 @@ docker compose up -d --build
 
 ## 🧪 Testing
 
+This project utilizes Django's built-in `unittest` framework (`django.test.TestCase`) to ensure the core game mechanics and resource economy function correctly without regressions.
+
+**Core Mechanics Tested:**
+
+1. **Initial State:** Verifies the game boots with correct default limits (18 Days, $2500, etc.).
+2. **Resource Deltas:** Verifies that stationary actions (like Resting) correctly deduct cash and time while capping morale boosts.
+3. **Loss Conditions:** Verifies the custom "Fatal Exception" logic (e.g., hitting 50 bugs immediately locks the game state).
+
+**API Mocking:**
+To guarantee that the test suite can run in offline environments and to prevent hitting Open-Meteo rate limits during CI/CD pipelines, external API calls are strictly mocked using Python's `@patch` decorator (`unittest.mock.patch`). The tests simulate both "Clear Skies" and "Severe Weather" API payloads to test the backend logic independently of external network health.
+
+**How to run the tests:**
+Ensure your virtual environment is activated, navigate to the `backend/` directory, and run:
+
+```bash
+python manage.py test
+
 ---
 
 ## 🎮 How to Play
@@ -187,3 +204,4 @@ Building the Silicon Valley Trail: Caribbean Edition has been a fantastic learni
 **Rajiv Wallace** - [LinkedIn](https://www.linkedin.com/in/rajiv-wallace)
 
 - Email: dev@rajivwallace.com
+```

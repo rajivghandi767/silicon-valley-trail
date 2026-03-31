@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - static_volume:/app/static
+    environment:
+      - DEBUG=False
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    command: >
+      sh -c "python manage.py migrate && 
+             python manage.py load_islands && 
+             gunicorn --bind 0.0.0.0:8000 config.wsgi:application"
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports:
+      - "8085:80"
+    volumes:
+      - static_volume:/app/static
+    depends_on:
+      - backend
+
+volumes:
+  static_volume:

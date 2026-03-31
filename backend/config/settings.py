@@ -9,12 +9,13 @@ env_path = BASE_DIR.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY', 'fallback-insecure-key-for-local-only')
+    'DJANGO_SECRET_KEY', 'fallback-insecure-key-for-local-development-only')
 
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get(
-    'DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1',
+                 'silicon-valley-trail.rajivwallace.com']
+CSRF_TRUSTED_ORIGINS = ['https://silicon-valley-trail.rajivwallace.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,3 +91,4 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
