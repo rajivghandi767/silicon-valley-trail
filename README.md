@@ -1,6 +1,8 @@
 # ✈️ 🏞️ 💻 Silicon Valley Trail: Caribbean Edition - A LinkedIn REACH Project
 
-A turn-based Caribbean transit strategy game. Manage resources, navigate real-time weather APIs, and reach the final pitch. Built with pure Django & React.
+**An API-driven, containerized backend application built for the LinkedIn REACH Apprenticeship.**
+
+This turn-based strategy game focuses on robust backend design, resource management, and external API integration. It utilizes a pure Django game engine to act as the single source of truth—handling complex state calculations, enforcing strict game-loop validations, and processing real-time marine and aviation weather data to dynamically influence gameplay. The project is fully Dockerized and self-hosted on bare-metal homelab infrastructure.
 
 **Live Demo**: [**silicon-valley-trail.rajivwallace.com**](https://silicon-valley-trail.rajivwallace.com)
 
@@ -23,14 +25,20 @@ A turn-based Caribbean transit strategy game. Manage resources, navigate real-ti
 
 ## 📖 Architecture Overview
 
+This project strictly follows a **"Smart Server / Dumb Client"** architecture to ensure absolute state security and prevent browser manipulation but also since UI/UX are beyond the scope of the assignment:
+
+- **Frontend (Dumb Client):** A React/Vite application that only captures user input and renders the JSON state provided by the backend. It contains zero game logic.
+- **Backend (Smart Server):** A Python/Django application acting as the authoritative game engine. It calculates resource deltas, enforces rules, communicates with external weather APIs, and controls the single source of truth.
+- **Proxy Routing:** A multi-stage Docker build uses Nginx to serve the static React frontend while reverse-proxying `/api/` and `/admin/` requests to the Django backend served via Gunicorn.
+
 ---
 
 ## 🔧 Tech Stack
 
-### **Backend**
+### **Backend & DB**
 
 - 🐍 Python
-- 🚀 Django
+- 🚀 Django/SQLite
 
 ### **Frontend**
 
@@ -38,7 +46,7 @@ A turn-based Caribbean transit strategy game. Manage resources, navigate real-ti
 - 🔵 TypeScript
 - 🍃 CSS & Vite
 
-### **Database & Infrastructure**
+### **Infrastructure**
 
 - 🐳 Docker & Docker Compose
 - 🌐 Nginx Proxy Manager (Reverse Proxy)
@@ -46,6 +54,12 @@ A turn-based Caribbean transit strategy game. Manage resources, navigate real-ti
 ---
 
 ## 🚀 Deployment & Infrastructure
+
+The live demo is fully self-hosted and deployed on a bare-metal homelab environment:
+
+- **Hardware:** Raspberry Pi 4B running DietPi (headless Debian).
+- **Containerization:** The entire stack is completely containerized and orchestrated using `docker compose` or `docker compose`, (depending on Docker Compose version).
+- **Traffic Management:** Cloudflare manages DNS and SSL edge encryption, routing incoming traffic to an Nginx Proxy Manager instance on the host machine, which then securely proxies requests to the application's internal container port. This was possible since I have invested in my own domain, rajivwallace.com.
 
 ---
 
@@ -56,20 +70,20 @@ To run this project locally, you will need to follow these steps:
 ### Prerequisites
 
 - 🐳 Docker & Docker Compose
-- 📝 A `.env` file
-
-### 1. Configure Environment (`.env`)
-
-Create a `.env` file based on `env.example`. Make sure to include:
-
-- `DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1`
-- `VITE_API_URL=http://localhost:8000`
 
 ### 2. Start the Application
 
 ```bash
 docker compose up -d --build
 ```
+
+or
+
+```bash
+docker-compose up -d --build
+```
+
+**Whether or not you need the hyphen will depend on your version of Docker Compose.**
 
 - **Backend**: `http://localhost:8000`
 - **Frontend**: `http://localhost:5173`
@@ -94,10 +108,25 @@ Ensure your virtual environment is activated, navigate to the `backend/` directo
 
 ```bash
 python manage.py test
+```
 
 ---
 
 ## 🎮 How to Play
+
+**The Goal:**
+
+Travel through 10 locations starting in New York City, to reach your final pitch in Dominica before time or resources run out!
+
+**Core Actions:**
+
+- **Code:** Squashes bugs but consumes time.
+- **Mentor:** Boosts team morale at the cost of time.
+- **Rest:** Greatly recovers morale but burns days and cash.
+- **Travel by Ferry:** A cheaper option, but highly susceptible to delays based on real-time marine weather.
+- **Take a Flight:** Fast, but costs Award Miles and risks morale drops from real-time flight turbulence.
+
+_Loss Conditions: Hitting 50 bugs, dropping below $0 cash, or reaching 0 morale will result in an immediate Game Over._
 
 ---
 
@@ -204,4 +233,3 @@ Building the Silicon Valley Trail: Caribbean Edition has been a fantastic learni
 **Rajiv Wallace** - [LinkedIn](https://www.linkedin.com/in/rajiv-wallace)
 
 - Email: dev@rajivwallace.com
-```
