@@ -106,7 +106,7 @@ def get_state(request):
             "You have 18 Days, your laptop, a little bit of cash, and a stash of airline award miles.\n\n"
             "YOUR MISSION: Island-hop your way from NYC down the Caribbean chain to Dominica.\n\n"
             "Manage your resources, navigate real-time tropical weather, keep your morale high, and ensure your code is bug-free so you can deliver a flawless pitch!\n\n"
-            "// Awaiting your command..."
+            "// THE JOURNEY BEGINS IN NEW YORK CITY 🇺🇸. TO GET STARTED, CHOOSE AN ACTION BELOW ..."
         )
 
     # 4. If user is mid-game, just restore the session
