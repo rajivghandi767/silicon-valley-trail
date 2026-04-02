@@ -8,7 +8,7 @@ export interface GameState {
     morale: number;
     bugs: number;
     days_remaining: number;
-    is_game_over: boolean;
-    is_victory: boolean;
+    is_won: boolean;
+    is_lost: boolean;
     status_summary: string;
 }
