@@ -18,7 +18,13 @@ function App() {
         setGameState(data);
         if (data.message) setNarrative(data.message);
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => {
+        if (err.message.includes("No active game found")) {
+          handleRestart(true); // Auto-start the game silently!
+        } else {
+          setError(err.message);
+        }
+      });
   }, []);
 
   const handleAction = async (actionType: string) => {
@@ -36,7 +42,7 @@ function App() {
       if (!res.ok) throw new Error(data.error || "Server error occurred.");
 
       // The backend dictates EVERYTHING now. We just render what it gives us.
-      if (data.game_state) setGameState(data.game_state);
+      setGameState(data);
       if (data.message) setNarrative(data.message);
     } catch (err: any) {
       setError(err.message);
@@ -45,13 +51,16 @@ function App() {
     }
   };
 
-  const handleRestart = async () => {
+  const handleRestart = async (force = false) => {
+    // If it's not a forced auto-start, ask the user for confirmation
     if (
+      !force &&
       !window.confirm(
         "Are you sure you want to restart the game? All progress will be lost.",
       )
     )
       return;
+
     setIsLoading(true);
     setError(null);
     try {
@@ -72,7 +81,7 @@ function App() {
     return <div style={{ color: "red", padding: "2rem" }}>Error: {error}</div>;
   if (!gameState) return <div style={{ padding: "2rem" }}>Loading IDE...</div>;
 
-  const isGameOver = gameState.is_game_over || gameState.is_victory;
+  const isGameOver = gameState.is_won || gameState.is_lost;
 
   return (
     <div className="app-container">
@@ -216,11 +225,7 @@ function App() {
           <h1 className="title">
             &lt; Silicon Valley Trail: Caribbean Edition /&gt;
           </h1>
-          <button
-            className="restart-btn"
-            onClick={handleRestart}
-            disabled={isLoading}
-          >
+          <button onClick={() => handleRestart()} className="restart-btn">
             [ Restart Game ]
           </button>
         </div>

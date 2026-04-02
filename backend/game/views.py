@@ -12,41 +12,47 @@ from .models import GameState, Location
 # EXTERNAL API INTEGRATION FUNCTIONS
 # ============================================================================
 
-# Using pure urllib to adhere strictly to the "minimum dependencies" objective. While 'requests' has better ergonomics, wrapping this in a timeout/try-except block guarantees that anyone can boot this locally without C-compiler/pip issues.
+# Objective: Minimum dependencies.
+# Using the standard library's `urllib` instead of third-party packages like `requests`, guarantees a zero-friction local installation environment for reviewing engineers.
 
 def check_marine_conditions(latitude, longitude):
     """
-    Fetches real-time wave data from Open-Meteo's dedicated Marine API to assess sea conditions for travel via ferry.
+    Fetches real-time wave data from Open-Meteo's Marine API.
+    Evaluates if sea conditions are safe enough for the player to travel via ferry.
     """
+
     # The dedicated Marine API endpoint requesting current wave_height in meters
     url = f"https://marine-api.open-meteo.com/v1/marine?latitude={latitude}&longitude={longitude}&current=wave_height"
 
     try:
         req = urllib.request.Request(
             url, headers={'User-Agent': 'SiliconValleyTrail/1.0'})
+
+        # Strict 3-second timeout to prevent blocking the Gunicorn worker thread if the external API is unresponsive.
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read().decode())
 
+            # Used .get() chained with empty dictionaries to safely traverse the JSON.
+            # This prevents fatal KeyErrors if the API payload structure unexpectedly changes.
             wave_height = data.get('current', {}).get('wave_height', 0.0)
 
             print(
-                f"🌊 MARINE API SUCCESS - Waves: {wave_height}m at Lat:{latitude}")
+                f"🌊 MARINE API SUCCESS - Waves: {wave_height}m at Lat:{latitude} Lon:{longitude}")
 
+            # Waves >= 1.5m trigger a small craft advisory (travel delay).
+            # Considering this is the Caribbean, we also introduce a base 40% probability of rough seas to ensure gameplay variability. This also adds an element of suspense to every ferry ride, as players won't know if they'll get lucky with calm seas or face delays until they attempt the action.
             is_rough_seas = wave_height >= 1.5 or random.random() < 0.40
             return is_rough_seas, wave_height
 
-            return is_rough_seas, wave_height
-
-    except (urllib.error.URLError, json.JSONDecodeError) as e:
+    except Exception as e:
         print(f"❌ Marine API Error: {e}")
-        # Fail open: assume calm seas so the game doesn't break if the API goes down
+        # Fallback Strategy:  If the API fails, timeouts, or the user is playing offline, we log the error but return a randomized fallback value so the core game loop never breaks i.e is_rough_seas = False, wave_height = 0.0 (Calm Seas are assumed).
         return False, 0.0
 
 
 def check_aviation_conditions(latitude, longitude):
     """
-    Fetches atmospheric weather to determine flight safety and turbulence.
-    Uses WMO (World Meteorological Organization) weather codes.
+    Fetches atmospheric weather using WMO (World Meteorological Organization) codes to determine flight safety and turbulence penalties.
     """
     url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current_weather=true"
 
@@ -63,13 +69,17 @@ def check_aviation_conditions(latitude, longitude):
             print(
                 f"✈️ AVIATION API SUCCESS - Wind: {wind_speed}km/h, Code: {weather_code}")
 
+            # As with marine conditions, we introduce base probabilities (40% for thunderstorms and 50% for turbulence) to ensure that even in good weather, there's still a chance of encountering challenges.
+
+            # WMO Codes >= 61 indicate rain showers/thunderstorms which ground flights entirely.
             is_thunderstorm = weather_code >= 61 or random.random() < 0.40
 
+            # High wind speeds trigger morale penalties due to heavy flight turbulence.
             is_turbulent = wind_speed >= 25.0 or random.random() < 0.50
 
             return is_thunderstorm, is_turbulent
 
-    except (urllib.error.URLError, json.JSONDecodeError) as e:
+    except Exception as e:
         print(f"❌ Aviation API Error: {e}")
         # Fail open: assume clear skies
         return random.random() < 0.40, random.random() < 0.50
@@ -81,25 +91,30 @@ def check_aviation_conditions(latitude, longitude):
 
 @require_http_methods(["GET"])
 def get_state(request):
-    game_state = GameState.objects.first()
-    if not game_state:
+    """
+    This acts as the session manager.
+    Because the frontend is a 'dumb client', it relies entirely on this endpoint to figure out what to render if the user hard-refreshes their browser.
+    """
+    game = GameState.objects.filter(
+        session_key=request.session.session_key).first()
+    if not game:
         return JsonResponse({"error": "No active game found. Start a new game."}, status=404)
 
-    # 1. Check if user refreshed AFTER winning
-    if game_state.check_win_condition():
+    # 1. Check if user refreshed the page AFTER winning
+    if game.is_won:
         display_message = (
-            "🏆 VICTORY: YOU SURVIVED THE TRAIL!\n"
+            "🏆 VICTORY: YOU MADE IT!\n"
             "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your LinkedIn REACH Apprenticeship awaits.\n\n"
             "> [ FINAL STATS ]\n"
-            f"  - Days to Spare: {game_state.days_remaining}\n"
-            f"  - Remaining Cash: ${game_state.cash}\n"
-            f"  - Award Miles: {game_state.award_miles}\n"
-            f"  - Final Morale: {game_state.morale}%\n"
-            f"  - Pitch Bugs: {game_state.bugs}"
+            f"  - Days to Spare: {game.days_remaining}\n"
+            f"  - Remaining Cash: ${game.cash}\n"
+            f"  - Award Miles: {game.award_miles}\n"
+            f"  - Final Morale: {game.morale}%\n"
+            f"  - Pitch Bugs: {game.bugs}"
         )
 
-    # 2. Check if user refreshed AFTER losing
-    elif game_state.current_location.sequence_in_journey == 1 and game_state.days_remaining == 18:
+    # 2. Check if user is at the very beginning of the game
+    elif game.current_location.sequence_in_journey == 1 and game.days_remaining == 18:
         display_message = (
             "Traditional application portals are a black hole. As a self-taught developer from New York, you need a different strategy to land your dream Backend Apprenticeship.\n\n"
             "Word on the wire is that Shalini Agarwal, Senior Director of Engineering at LinkedIn and head of the REACH program, is taking a rare, unplugged vacation to attend the Nature Island Hiking Festival in Dominica 🇩🇲.\n\n"
@@ -109,15 +124,15 @@ def get_state(request):
             "// THE JOURNEY BEGINS IN NEW YORK CITY 🇺🇸. TO GET STARTED, CHOOSE AN ACTION BELOW ..."
         )
 
-    # 4. If user is mid-game, just restore the session
+    # 3. If user is mid-game, just restore the session
     else:
         display_message = (
             "// SECURE SESSION RESTORED...\n"
-            f"// RESUMING AT STOP {game_state.current_location.sequence_in_journey}: {game_state.current_location.name.upper()}\n\n"
+            f"// RESUMING AT STOP {game.current_location.sequence_in_journey}: {game.current_location.name.upper()}\n\n"
             "// Awaiting your next command..."
         )
 
-    response_data = game_state.serialize_for_api()
+    response_data = game.serialize_for_api()
     response_data["message"] = display_message
     return JsonResponse(response_data)
 
@@ -129,14 +144,22 @@ def get_state(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def take_action(request):
-    game_state = GameState.objects.first()
-    if not game_state:
+    """
+    This is the Core Engine Loop.
+    Strictly accepts POST requests.
+    Calculates resource deltas based on user choices, integrates external weather constraints, and rolls for random events.
+    """
+
+    game = GameState.objects.filter(
+        session_key=request.session.session_key).first()
+    if not game:
         return JsonResponse({"error": "No active game found. Start a new game."}, status=404)
-    if game_state.check_loss_condition() or game_state.check_win_condition():
-        return JsonResponse({
-            "error": "The game has ended. Please restart.",
-            "game_state": game_state.serialize_for_api()
-        }, status=200)
+
+    # Prevent actions if the game is already over i.e won or lost
+    if game.is_lost or game.is_won:
+        response_data = game.serialize_for_api()
+        response_data["error"] = "The game has ended. Please restart."
+        return JsonResponse(response_data, status=400)
 
     try:
         data = json.loads(request.body)
@@ -148,87 +171,83 @@ def take_action(request):
         }
         turn_message = f"> You elected to {action_names.get(action, action)}.\n\n"
 
+        # Initialize variables to track if the player successfully traveled (used for triggering random events) and to store the next location object after travel.
         successful_travel = False
         next_location = None
 
-        old_morale = game_state.morale
-        old_bugs = game_state.bugs
+        # Store _ morale and bugs values to calculate deltas for the turn summary message and prevent negative values from being assigned/displayed.
+        previous_morale = game.morale
+        previous_bugs = game.bugs
 
-        # --- STATIONARY ACTIONS (NO RANDOM EVENTS) ---
+        # --- STATIONARY ACTIONS (NO RANDOM EVENTS GENERATED) ---
         if action == 'rest':
-            game_state.morale = min(100, game_state.morale + 40)
-            game_state.cash -= 100
-            game_state.days_remaining -= 1
+            game.morale += 40
+            game.cash -= 100
+            game.days_remaining -= 1
             turn_message += "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)"
-            if (game_state.morale - old_morale) > 0:
-                turn_message += f"\n  - Morale restored (+{game_state.morale - old_morale})"
 
         elif action == 'code':
-            game_state.bugs = max(0, game_state.bugs - 10)
-            game_state.morale -= 20
-            game_state.days_remaining -= 1
-            turn_message += "> You locked yourself in the hotel room and crushed some technical debt.\n\n> Result:\n  - Mental exhaustion (-20 Morale)\n  - Time elapsed (-1 Day)"
-            if (old_bugs - game_state.bugs) > 0:
-                turn_message += f"\n  - Technical debt crushed (-{old_bugs - game_state.bugs} Bugs)"
+            game.bugs -= 10
+            game.morale -= 20
+            game.days_remaining -= 1
+            turn_message += "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)"
 
         elif action == 'mentor':
-            game_state.days_remaining -= 1
-            game_state.morale = min(100, game_state.morale + 20)
-            game_state.bugs = max(0, game_state.bugs - 10)
-            turn_message += "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code!\n\n> Result:\n  - Time elapsed (-1 Day)"
-            if (game_state.morale - old_morale) > 0:
-                turn_message += f"\n  - Community karma (+{game_state.morale - old_morale} Morale)"
-            if (old_bugs - game_state.bugs) > 0:
-                turn_message += f"\n  - Bugs squashed via teaching (-{old_bugs - game_state.bugs} Bugs)"
+            game.days_remaining -= 1
+            game.morale += 20
+            game.bugs -= 10
+            turn_message += "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
 
         # --- TRAVEL ACTIONS (TRIGGERS RANDOM EVENTS) ---
         elif action in ['travel_ferry', 'travel_flight']:
             next_location = Location.objects.filter(
-                sequence_in_journey=game_state.current_location.sequence_in_journey + 1).first()
+                sequence_in_journey=game.current_location.sequence_in_journey + 1).first()
             if not next_location:
-                return JsonResponse({"message": "You are already at the final destination!", "game_state": game_state.serialize_for_api()}, status=200)
+                response_data = game.serialize_for_api()
+                response_data["message"] = "You are already at the final destination!"
+                return JsonResponse(response_data, status=200)
 
             if action == 'travel_ferry':
                 is_rough_seas, wave_height = check_marine_conditions(
                     next_location.latitude, next_location.longitude)
                 turn_message += f"> Sea Conditions: {wave_height}m wave height detected.\n\n"
                 if is_rough_seas:
-                    game_state.morale -= 20
-                    game_state.days_remaining -= 1
-                    turn_message += f"> Result:\n  - SMALL CRAFT ADVISORY! Ferries grounded.\n  - Travel delays (-20 Morale)\n  - Still in {game_state.current_location.name} (-1 Day)"
+                    game.morale -= 20
+                    game.days_remaining -= 1
+                    turn_message += f"> Result:\n  - SMALL CRAFT ADVISORY! Ferries grounded.\n - Still in {game.current_location.name} (-1 Day)"
                 else:
-                    game_state.cash -= 150
-                    game_state.morale -= 10
-                    game_state.days_remaining -= 1
-                    game_state.current_location = next_location
+                    game.cash -= 150
+                    game.morale -= 10
+                    game.days_remaining -= 1
+                    game.current_location = next_location
                     successful_travel = True
-                    turn_message = f"> You took the ferry and safely made it to {next_location.name}. The sea breeze was nice, but the trip was exhausting.\n\n> Result:\n  - Funds deducted (-$150)\n  - Travel fatigue (-10 Morale)\n  - Time elapsed (-1 Day)"
+                    turn_message = f"> You took the ferry and safely made it to {next_location.name}. The sea breeze was nice, but the trip was exhausting.\n\n> Result:\n  - Funds deducted (-$150)\n  - Time elapsed (-1 Day)"
 
             elif action == 'travel_flight':
-                if game_state.award_miles < 2000:
+                if game.award_miles < 2000:
                     turn_message += "> Insufficient Award Miles. Transaction declined."
-                    return JsonResponse({"message": turn_message, "game_state": game_state.serialize_for_api()}, status=200)
+                    response_data = game.serialize_for_api()
+                    response_data["message"] = turn_message
+                    return JsonResponse(response_data, status=200)
 
                 is_thunderstorm, is_turbulent = check_aviation_conditions(
                     next_location.latitude, next_location.longitude)
                 if is_thunderstorm:
-                    game_state.morale -= 15
-                    game_state.days_remaining -= 1
-                    turn_message += f"> Flight Conditions: Thunderstorms detected!\n\n> Result:\n  - ATC GROUND STOP! Flights canceled.\n  - Travel delays (-15 Morale)\n  - Still in {game_state.current_location.name} (-1 Day)"
+                    game.morale -= 15
+                    game.days_remaining -= 1
+                    turn_message += f"> Flight Conditions: Thunderstorms detected!\n\n> Result:\n  - ATC GROUND STOP! Flights canceled.\n  - Still in {game.current_location.name} (-1 Day)"
                 else:
-                    game_state.award_miles -= 2000
-                    game_state.days_remaining -= 1
-                    game_state.current_location = next_location
+                    game.award_miles -= 2000
+                    game.days_remaining -= 1
+                    game.current_location = next_location
                     successful_travel = True
 
                     if is_turbulent:
-                        game_state.morale -= 15
-                        turn_message += f"> Flight Conditions: High winds & turbulence.\n\n> Result:\n  - Landed in {next_location.name}, but flight was awful.\n  - Miles redeemed (-2000)\n  - Travel fatigue (-15 Morale)\n  - Time elapsed (-1 Day)"
+                        game.morale -= 15
+                        turn_message += f"> Flight Conditions: High winds & turbulence.\n\n> Result:\n  - Landed in {next_location.name}, but flight was awful.\n  - Miles redeemed (-2000)\n  - Time elapsed (-1 Day)"
                     else:
-                        game_state.morale = min(100, game_state.morale + 10)
+                        game.morale += 10
                         turn_message += f"> Flight Conditions: Clear skies.\n\n> Result:\n  - Smooth flight to {next_location.name}. Lounge access helped.\n  - Miles redeemed (-2000)\n  - Time elapsed (-1 Day)"
-                        if (game_state.morale - old_morale) > 0:
-                            turn_message += f"\n  - Lounge access boosted morale (+{game_state.morale - old_morale})"
 
             # ==========================================
             # RANDOM EVENTS (ONLY HAPPENS AFTER TRAVEL)
@@ -237,84 +256,101 @@ def take_action(request):
                 event_roll = random.randint(1, 12)
                 event_text = ""
 
-                ev_old_morale = game_state.morale
-                ev_old_bugs = game_state.bugs
-
                 if event_roll == 1:
-                    game_state.bugs += 20
-                    event_text = "A silent React dependency update broke your staging environment! (+20 Bugs)"
+                    game.bugs += 20
+                    event_text = "A silent React dependency update broke your staging environment!"
                 elif event_roll == 2:
-                    game_state.cash -= 150
+                    game.cash -= 150
                     event_text = "You left your laptop charger at TSA and had to buy an overpriced replacement. (-$150)"
                 elif event_roll == 3:
-                    game_state.days_remaining -= 1
-                    game_state.morale -= 10
-                    event_text = "You over-engineered your API architecture. You lost a day rewriting it. (-1 Day, -10 Morale)"
+                    game.days_remaining -= 1
+                    game.morale -= 10
+                    event_text = "You over-engineered your API architecture. You lost a day rewriting it. (-1 Day)"
                 elif event_roll == 4:
-                    game_state.morale = min(100, game_state.morale + 25)
-                    delta = game_state.morale - ev_old_morale
-                    event_text = f"You found an expat bar showing the Chelsea match. They secured 3 points! (+{delta} Morale)" if delta > 0 else "Chelsea won, but you're already maxed out on good vibes."
+                    game.morale += 25
+                    event_text = f"You found an expat bar showing the Chelsea match. They secured 3 points!"
                 elif event_roll == 5:
-                    game_state.bugs = max(0, game_state.bugs - 20)
-                    delta = ev_old_bugs - game_state.bugs
-                    event_text = f"A new submarine fiber cable provided single-digit ping. You destroyed your backlog. (-{delta} Bugs)" if delta > 0 else "Perfect Wi-Fi, but your code is already flawless."
+                    game.bugs -= 20
+                    event_text = f"A new submarine fiber cable provided single-digit ping. You destroyed your backlog."
                 elif event_roll == 6:
-                    game_state.award_miles += 2000
-                    event_text = "A previous delayed flight finally paid out AAdvantage compensation! (+2000 Miles)"
+                    game.award_miles += 2000
+                    event_text = "A delayed flight finally paid out AAdvantage compensation! (+2000 Miles)"
                 elif event_roll == 7:
-                    game_state.morale -= 20
-                    event_text = "Imposter syndrome hit hard after reviewing a Senior Engineer's portfolio. (-20 Morale)"
+                    game.morale -= 20
+                    event_text = "Imposter syndrome hit hard after reviewing a Senior Engineer's portfolio."
                 elif event_roll == 8:
-                    game_state.bugs += 15
-                    game_state.days_remaining -= 1
-                    event_text = "You accidentally pushed your .env file to GitHub. You spent a day rotating keys. (-1 Day, +15 Bugs)"
+                    game.bugs += 15
+                    game.days_remaining -= 1
+                    event_text = "You accidentally pushed your .env file to GitHub. You spent a day rotating keys. (-1 Day)"
                 elif event_roll == 9:
-                    game_state.cash += 500
-                    event_text = "You helped a local dive shop fix their booking database. They paid you in cash! (+$500)"
+                    game.cash += 500
+                    event_text = "You helped a local dive shop fix their booking database. They paid you in cash! (+ $500)"
                 elif event_roll == 10:
-                    game_state.bugs = max(0, game_state.bugs - 15)
-                    game_state.morale = min(100, game_state.morale + 15)
-                    event_text = "You connected with a REACH Alumni on LinkedIn who reviewed your PRs! (Morale & Bug Boost)"
+                    game.bugs -= 15
+                    game.morale += 15
+                    event_text = "You connected with a REACH Alumni on LinkedIn who reviewed your PRs!"
                 elif event_roll == 11:
-                    game_state.cash -= 120
-                    game_state.morale = min(100, game_state.morale + 30)
-                    event_text = "You stumbled into a Bilt Dining experience. The pescatarian menu was incredible! (-$120, Huge Morale Boost)"
+                    game.cash -= 120
+                    game.morale += 30
+                    event_text = "You stumbled into a Bilt Dining experience. The pescatarian menu was incredible! (-$120)"
                 elif event_roll == 12:
-                    game_state.days_remaining -= 1
+                    game.days_remaining -= 1
                     event_text = "Carnival season! A DDoS attack of sound and color. You couldn't work at all. (-1 Day)"
 
                 turn_message += f"\n\n> On arrival in {next_location.name}, {event_text}"
 
         # --- CLAMPING BLOCK ---
-        # Stats never break their logical boundaries before saving
-        game_state.morale = max(0, min(100, game_state.morale))
-        game_state.bugs = max(0, game_state.bugs)
+        # Regardless of what happened above, we enforce strict boundaries on morale and bugs to prevent negative values or values that exceed loss conditions from being assigned to the game state. This ensures that the frontend can always safely display the current state without needing to handle edge cases for negative morale or bugs above 50.
+        game.morale = max(0, min(100, game.morale))
+        game.bugs = max(0, game.bugs)
 
-        game_state.save()
+        # Save the game state after processing the action, weather conditions, and random events. This ensures that when the frontend calls the GET endpoint to refresh the session, it receives the most up-to-date and accurate game state reflecting all the consequences of the player's last action.
+        game.save()
 
-        # Check for Win/Loss - Display Result to User
-        if game_state.check_win_condition():
+        # ====================================================
+        # POST-ACTION STATE VALIDATION (Deltas & Win/Loss)
+        # ====================================================
+
+        # A. Calculate dynamic deltas for UI feedback based on the CLAMPED state
+        morale_delta = game.morale - previous_morale
+        if morale_delta > 0:
+            turn_message += f"\n  - Morale restored (+{morale_delta})"
+        elif morale_delta < 0:
+            turn_message += f"\n  - Morale decreased ({morale_delta})"
+
+        bug_delta = game.bugs - previous_bugs
+        if bug_delta < 0:
+            turn_message += f"\n  - Bugs squashed ({bug_delta})"
+        elif bug_delta > 0:
+            turn_message += f"\n  - Bugs introduced (+{bug_delta})"
+
+        if game.is_won:
             turn_message = (
                 "🏆 VICTORY: YOU SURVIVED THE TRAIL!\n"
                 "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your apprenticeship awaits.\n\n"
                 "> [ FINAL STATS ]\n"
-                f"  - Days to Spare: {game_state.days_remaining}\n"
-                f"  - Remaining Cash: ${game_state.cash}\n"
-                f"  - Award Miles: {game_state.award_miles}\n"
-                f"  - Final Morale: {game_state.morale}%\n"
-                f"  - Pitch Bugs: {game_state.bugs}"
+                f"  - Days to Spare: {game.days_remaining}\n"
+                f"  - Remaining Cash: ${game.cash}\n"
+                f"  - Award Miles: {game.award_miles}\n"
+                f"  - Final Morale: {game.morale}%\n"
+                f"  - Pitch Bugs: {game.bugs}"
             )
-        elif game_state.check_loss_condition():
-            if game_state.days_remaining <= 0:
+        elif game.is_lost:
+            if game.days_remaining <= 0:
                 turn_message = "💀 FATAL EXCEPTION: You ran out of days. The festival ended before you reached Dominica."
-            elif game_state.cash < 0:
+            elif game.cash < 0:
                 turn_message = "💀 FATAL EXCEPTION: You went bankrupt. You are stranded in the Caribbean."
-            elif game_state.bugs >= 50:
+            elif game.bugs >= 50:
                 turn_message = "💀 FATAL EXCEPTION: Your MVP crashed during the pitch. The codebase was overwhelmed with 50+ bugs."
-            elif game_state.morale <= 0:
+            elif game.morale <= 0:
                 turn_message = "💀 FATAL EXCEPTION: Burnout. Your morale hit 0 and you closed your laptop for good."
 
-        return JsonResponse({"message": turn_message, "game_state": game_state.serialize_for_api()}, status=200)
+        # ==========================================
+        # FINAL OUTPUT TO FRONTEND
+        # ==========================================
+        response_data = game.serialize_for_api()
+        response_data["message"] = turn_message
+        return JsonResponse(response_data, status=200)
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -327,22 +363,22 @@ def take_action(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def restart_game(request):
+    """
+    Resets the active session back to the default starting state.
+    """
+    try:
+        # Safely fetch the starting location.
+        first_location = Location.objects.get(sequence_in_journey=1)
+    except Location.DoesNotExist:
+        return JsonResponse({"error": "System Error: Starting location not found in database."}, status=500)
 
-    game_state = GameState.objects.first()
-    if not game_state:
-        return JsonResponse({"error": "No active game found."}, status=404)
+    # This allows concurrent gameplay without having to collect user info or implement authentication. Each browser session gets its own unique game state that persists across page reloads until they choose to restart or end the session.
+    if not request.session.session_key:
+        request.session.create()
 
-        # Fetch the starting location (New York City)
-    first_location = Location.objects.get(sequence_in_journey=1)
+    session_id = request.session.session_key
 
-    # Reset all resources
-    game_state.current_location = first_location
-    game_state.cash = 2500
-    game_state.award_miles = 8000
-    game_state.morale = 100
-    game_state.bugs = 0
-    game_state.days_remaining = 18
-    game_state.save()
+    game = GameState.reset_game(first_location, session_id)
 
     # Reboot Message
     reboot_message = (
@@ -357,7 +393,7 @@ def restart_game(request):
         "// Awaiting your command..."
     )
 
-    response_data = game_state.serialize_for_api()
+    response_data = game.serialize_for_api()
     response_data["message"] = reboot_message
 
     return JsonResponse(response_data, status=200)
