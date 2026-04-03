@@ -214,7 +214,7 @@ def take_action(request):
                 if is_rough_seas:
                     game.morale -= 20
                     game.days_remaining -= 1
-                    turn_message += f"> Result:\n  - SMALL CRAFT ADVISORY! Ferries grounded.\n - Still in {game.current_location.name} (-1 Day)"
+                    turn_message += f"> Result:\n  - SMALL CRAFT ADVISORY! Ferries grounded.\n  - Still in {game.current_location.name} (-1 Day)"
                 else:
                     game.cash -= 150
                     game.morale -= 10
