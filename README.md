@@ -8,6 +8,8 @@ This turn-based strategy game focuses on robust backend design, resource managem
 
 **Live Demo**: [**silicon-valley-trail.rajivwallace.com**](https://silicon-valley-trail.rajivwallace.com)
 
+> ⚠️ **Note to Reviewers:** As the focus of this assessment is strictly on server-side logic, data modeling, and backend architecture, frontend and UI/UX polish is beyond the scope of this project. The live demo is designed for **Desktop viewing only** and is not optimized for mobile screens.
+
 ---
 
 ## 📜 Table of Contents
@@ -42,7 +44,7 @@ This project strictly follows a **"Smart Server / Dumb Client"** architecture to
 - 🐍 Python
 - 🚀 Django/SQLite
 
-## **API Used**
+### **API Used**
 
 - ☁️ Open-Meteo Weather Forecast API
 - 🌊 Open-Meteo Marine Weather API
@@ -174,7 +176,7 @@ My goal was to use AI to accelerate my learning and execution, while ensuring I 
 
 Specifically, I leveraged AI for:
 
-- **Architectural Sounding Board:** Before writing any code, I used AI to debate system design tradeoffs, ultimately deciding on the strict "Smart Server / Dumb Client" architecture and discussing the security implications of decoupling the frontend. This was particulary helpful is weighing the pros and cons of spinning up a Postgres container vs using the SQLite contained in Django.
+- **Architectural Sounding Board:** Before writing any code, I used AI to debate system design tradeoffs, ultimately deciding on the strict "Smart Server / Dumb Client" architecture and discussing the security implications of decoupling the frontend. This was particularly helpful is weighing the pros and cons of spinning up a Postgres container vs using the SQLite contained in Django.
 - **Pair Programming:** When building the core game loop, I used AI to help isolate complex Python logic errors, catch edge-cases within my random event matrix, and discuss the nuances of Django's test client session management.
 - **Auditing & Editing:** I utilized AI as an editor to audit my test suite for coverage gaps, review my docstrings for clarity and typos, and refine this README to ensure it met my own formatting standards.
 
@@ -202,7 +204,7 @@ I chose the Open-Meteo API because it requires no authentication (preventing .en
 
 Instead of a single API proxy, I implemented a Multi-Domain Routing Strategy, enhanced by a Dynamic Volatility Modifier:
 
-- **Ferry Travel (Marine Weather API):** Queries real-time wave_height. Because the Caribbean has relativeley good weather, the backend blends the fetched data with an RNG to simulate rough sea probability, ensuring ferries carry inherent risk.
+- **Ferry Travel (Marine Weather API):** Queries real-time wave_height. Because the Caribbean has relatively good weather, the backend blends the fetched data with an RNG to simulate rough sea probability, ensuring ferries carry inherent risk.
 - **Flight Travel (Weather Forecast API):** Queries atmospheric WMO weather codes and wind speeds. Thunderstorms ground flights entirely, while a dynamic math function calculates turbulence probability based on live wind speed, resulting in Morale penalties.
 </details>
 
@@ -241,7 +243,7 @@ Because this application is designed around a tight, stateless game loop, I inte
 
 ---
 
-## 🙏🏾 Acknowlegements
+## 🙏🏾 Acknowledgements
 
 I would like to extend my sincere gratitude to the LinkedIn team for providing this incredibly fun and challenging technical assessment.
 
