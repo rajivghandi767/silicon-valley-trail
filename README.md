@@ -223,6 +223,7 @@ Instead of a single API proxy, I implemented a Multi-Domain Routing Strategy, en
 
 <details open>
 <summary><b>5. Tradeoffs & "If I had more time"</b></summary>
+
 **The Tradeoffs:**
 
 - **Security vs. Evaluator Friction (CSRF Bypass):** In a production environment, a decoupled React frontend communicating with a Django API requires strict CSRF token management or JWT authentication. To ensure zero-friction local testing for the reviewing engineers, I opted to use the `@csrf_exempt` decorator on the API routes.
