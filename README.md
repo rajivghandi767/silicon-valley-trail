@@ -208,6 +208,7 @@ Instead of a single API proxy, I implemented a Multi-Domain Routing Strategy, en
 
 <details>
 <summary><b>3. Data Modeling (State, Events, Persistence)</b></summary>
+
 - **Session-Based "Accountless" Auth:** I utilized Django's built in `request.session.session_key` to map the `GameState` to the player's browser. This allows concurrent gameplay, while maintaining a secure, persistent state on the server without collecting personal information.
 - **Context-Aware State:** The GameState model acts as the single source of truth. To strictly enforce the "Dumb Client" UI, the model dynamically generates a status_summary. Instead of React parsing logic to figure out if the game is over, Django pushes the exact terminal readout directly to the frontend via a custom `serialize_for_api()` method.
 - **Database Seeding via Management Commands:** Instead of using raw SQL or hardcoded JSON fixtures, I built a custom Django management command (`load_islands.py`). This allows for a robust, repeatable database seed process that integrates seamlessly into the Docker build sequence.
@@ -215,6 +216,7 @@ Instead of a single API proxy, I implemented a Multi-Domain Routing Strategy, en
 
 <details>
 <summary><b>4. Error Handling (Network Failures & Rate Limits)</b></summary>
+
 - **Network Failures (Failing Aggressive):** To ensure the game can be played offline or in degraded network environments, all urllib API calls are wrapped in a strict 3-second timeout try/except block. If the API fails, the backend doesn't "fail safe" (which would make the game too easy); it "fails aggressive" by defaulting to a localized RNG dice roll, preserving gameplay tension while guaranteeing the loop never crashes.
 - **Rate Limits:** Open-Meteo allows 10,000 free daily requests. By restricting API calls only to travel actions, the application heavily throttles its own outbound requests, ensuring it will never hit a rate limit.
 </details>
@@ -222,7 +224,8 @@ Instead of a single API proxy, I implemented a Multi-Domain Routing Strategy, en
 <details open>
 <summary><b>5. Tradeoffs & "If I had more time"</b></summary>
 **The Tradeoffs:**
-- **Security vs. Evaluator Friction (CSRF Bypass):** In a production environment, a decoupled React frontend communicating with a Django API requires strict CSRF token management or JWT authentication. To ensure zero-friction local testing for the reviewing engineers, I opted to use the `@csrf_exempt` decorator on the API routes. 
+
+- **Security vs. Evaluator Friction (CSRF Bypass):** In a production environment, a decoupled React frontend communicating with a Django API requires strict CSRF token management or JWT authentication. To ensure zero-friction local testing for the reviewing engineers, I opted to use the `@csrf_exempt` decorator on the API routes.
 - **Internal State RNG vs. External APIs:** I traded infinite external variety for a hardcoded internal RNG event system. This tradeoff allowed me to tightly couple distinct events to specific game resources and craft a specific narrative that a generic API couldn't provide.
 - **Dependency Minimization vs. Developer Experience (DX):** I traded the developer ergonomics of the `requests` library for Python's built-in `urllib`. This slightly clunkier DX was worth the tradeoff to guarantee a zero-dependency setup.
 
