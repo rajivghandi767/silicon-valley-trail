@@ -39,8 +39,8 @@ def check_marine_conditions(latitude, longitude):
                 f"🌊 MARINE API SUCCESS - Waves: {wave_height}m at Lat:{latitude} Lon:{longitude}")
 
             # Waves >= 1.5m trigger a small craft advisory (travel delay).
-            # Considering this is the Caribbean, we also introduce a base 40% probability of rough seas to ensure gameplay variability. This also adds an element of suspense to every ferry ride, as players won't know if they'll get lucky with calm seas or face delays until they attempt the action.
-            is_rough_seas = wave_height >= 1.5 or random.random() < 0.40
+            # Considering this is the Caribbean, we also introduce a base 20% probability of rough seas to ensure gameplay variability. This also adds an element of suspense to every ferry ride, as players won't know if they'll get lucky with calm seas or face delays until they attempt the action.
+            is_rough_seas = wave_height >= 1.5 or random.random() < 0.20
             return is_rough_seas, wave_height
 
     except Exception as e:
@@ -68,10 +68,10 @@ def check_aviation_conditions(latitude, longitude):
             print(
                 f"✈️ AVIATION API SUCCESS - Wind: {wind_speed}km/h, Code: {weather_code}")
 
-            # As with marine conditions, we introduce base probabilities (40% for thunderstorms and 50% for turbulence) to ensure that even in good weather, there's still a chance of encountering challenges.
+            # As with marine conditions, we introduce base probabilities (20% for thunderstorms and 50% for turbulence) to ensure that even in good weather, there's still a chance of encountering challenges.
 
             # WMO Codes >= 61 indicate rain showers/thunderstorms which ground flights entirely.
-            is_thunderstorm = weather_code >= 61 or random.random() < 0.40
+            is_thunderstorm = weather_code >= 61 or random.random() < 0.20
 
             # High wind speeds trigger morale penalties due to heavy flight turbulence.
             is_turbulent = wind_speed >= 25.0 or random.random() < 0.50
@@ -81,7 +81,7 @@ def check_aviation_conditions(latitude, longitude):
     except Exception as e:
         print(f"❌ Aviation API Error: {e}")
         # Fail open: assume clear skies
-        return random.random() < 0.40, random.random() < 0.50
+        return random.random() < 0.20, random.random() < 0.50
 
 # ==========================================
 # ENDPOINT 1: Get the current game state
