@@ -29,6 +29,17 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'svt_cache_table',
+
+        'TIMEOUT': 3600,
+        'MAX_ENTRIES': 1000,
+        'CULL_FREQUENCY': 3,
+    }
+}
+
 # ============================================================================
 # CSRF AND SESSION SETTINGS FOR PRODUCTION
 # ============================================================================

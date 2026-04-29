@@ -19,6 +19,7 @@ services:
         done &&
         echo 'Database is ready!' &&
         python manage.py migrate --noinput &&
+        python manage.py createcachetable &&
         python manage.py load_islands &&
         python manage.py collectstatic --noinput"
 
@@ -36,6 +37,7 @@ services:
     env_file: .env
     volumes:
       - svt_static:/home/backend/django/staticfiles
+      - svt_logs:/home/backend/django/logs
     user: "backend:backend_group"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
