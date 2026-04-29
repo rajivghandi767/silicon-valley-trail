@@ -18,12 +18,16 @@ class Command(BaseCommand):
              "description": "The concrete jungle. Startup HQ and the start of the journey."},
 
             {"name": "Anguilla 🇦🇮", "latitude": 18.2206, "longitude": -63.0686,
-                "description": "An OECS territory that owns the '.ai' top-level domain. Their economy literally scales with the artificial intelligence boom. Pure passive income."},
+                "description": "An OECS territory that owns the '.ai' top-level domain. Their economy literally scales with the artificial intelligence boom. Pure passive income.",
+
+                "attribute": {"description": "Bonus: Gain 500 award miles. Big on points.", "morale": 500}, }
+
+
 
             # Easter Egg: OECS stands for Organization of Eastern Caribbean States, an economic bloc that includes several island nations and territories, many of which are featured as stops in the game. OECS countries use the Eastern Caribbean Dollar EC or XCD as their currency.
 
             {"name": "St. Eustatius", "latitude": 17.4890, "longitude": -62.9736,
-             "description": "The original decentralized exchange. In the 1700s, this tiny free port bypassed global blockades to supply the American Revolution. The perfect node to secure some shadow funding."},
+             "description": "The original decentralized exchange. In the 1700s, this tiny free port bypassed global blockades to supply the American Revolution. The perfect node to secure some shadow funding.,"},
 
             {"name": "St. Barts 🇧🇱", "latitude": 17.9000, "longitude": -62.8333,
                 "description": "French Caribbean luxury. Its notoriously steep runway requires a special pilot certification—the aviation equivalent of a Senior DevOps role."},

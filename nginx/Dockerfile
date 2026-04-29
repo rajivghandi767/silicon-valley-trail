@@ -1,17 +1,25 @@
-# Stage 1: Build the React Frontend
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ ./
-RUN npm run build
-
-# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Remove default nginx config and copy ours
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx/nginx.conf /etc/nginx/conf.d/
+# Install curl for health checks
+RUN apk add --no-cache curl
 
-# Copy the built React assets from Stage 1
-COPY --from=build /app/dist /usr/share/nginx/html
+# Remove default nginx configs - BOTH files needed
+RUN rm /etc/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx configuration  
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Create directory for static files
+RUN mkdir -p /usr/share/nginx/html/static && \
+    mkdir -p /usr/share/nginx/html/media && \
+    chown -R nginx:nginx /usr/share/nginx/html
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/nginx-status/ || exit 1
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

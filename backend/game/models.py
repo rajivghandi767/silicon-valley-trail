@@ -17,6 +17,11 @@ class Location(models.Model):
     latitude = models.FloatField(default=0.0)
     longitude = models.FloatField(default=0.0)
 
+    attribute = models.TextField(
+        help_text="Additional attributes for the location. Benefite to Player")
+
+    morale = models.IntegerField()
+
     class Meta:
         ordering = ['sequence_in_journey']
 

@@ -1,28 +1,98 @@
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+  # DB Migration & Static Files Collection
+  svt-backend-init:
+    image: ghcr.io/rajivghandi767/svt-backend:${IMAGE_TAG:-latest}
+    container_name: svt-backend-init
+    user: root
+    networks:
+      - svt
+      - database
+    env_file: .env
     volumes:
-      - static_volume:/app/static
-    environment:
-      - DEBUG=False
-      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - svt_static:/home/backend/django/staticfiles
     command: >
-      sh -c "python manage.py migrate && 
-             python manage.py load_islands && 
-             gunicorn --bind 0.0.0.0:8000 config.wsgi:application"
+      sh -c "
+        echo 'Waiting for postgres-core...' &&
+        until python -c 'import socket,os; s=socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(2); s.connect((os.environ[\"POSTGRES_HOST\"], 5432)); s.close()'; do
+          echo 'Database not ready... waiting 2s';
+          sleep 2;
+        done &&
+        echo 'Database is ready!' &&
+        python manage.py migrate --noinput &&
+        python manage.py load_islands &&
+        python manage.py collectstatic --noinput"
 
-  nginx:
-    build:
-      context: .
-      dockerfile: ./nginx/Dockerfile
-    ports:
-      - "8085:80"
-    volumes:
-      - static_volume:/app/static
+  # SVT Backend - Django
+  svt-backend:
+    image: ghcr.io/rajivghandi767/svt-backend:${IMAGE_TAG:-latest}
+    container_name: svt-backend
+    restart: unless-stopped
+    networks:
+      - svt
+      - database
     depends_on:
-      - backend
+      svt-backend-init:
+        condition: service_completed_successfully
+    env_file: .env
+    volumes:
+      - svt_static:/home/backend/django/staticfiles
+    user: "backend:backend_group"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # SVT Frontend
+  svt-frontend:
+    image: ghcr.io/rajivghandi767/svt-frontend:${IMAGE_TAG:-latest}
+    container_name: svt-frontend
+    restart: unless-stopped
+    networks:
+      - core
+      - svt
+    depends_on:
+      svt-backend:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Dedicated Nginx for SVT
+  svt-nginx:
+    image: ghcr.io/rajivghandi767/svt-nginx:${IMAGE_TAG:-latest}
+    container_name: svt-nginx
+    restart: unless-stopped
+    networks:
+      - core
+      - svt
+    depends_on:
+      svt-backend:
+        condition: service_healthy
+      svt-frontend:
+        condition: service_healthy
+    volumes:
+      - svt_static:/usr/share/nginx/html/static:ro
+      - svt_logs:/var/log/nginx
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/nginx-status/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  static_volume:
+  svt_static:
+    name: svt_static
+  svt_logs:
+    name: svt_logs
+
+networks:
+  core:
+    external: true
+  svt:
+    external: true
+  database:
+    external: true
