@@ -18,11 +18,7 @@ class Command(BaseCommand):
              "description": "The concrete jungle. Startup HQ and the start of the journey."},
 
             {"name": "Anguilla 🇦🇮", "latitude": 18.2206, "longitude": -63.0686,
-                "description": "An OECS territory that owns the '.ai' top-level domain. Their economy literally scales with the artificial intelligence boom. Pure passive income.",
-
-                "attribute": {"description": "Bonus: Gain 500 award miles. Big on points.", "morale": 500}, }
-
-
+                "description": "An OECS territory that owns the '.ai' top-level domain. Their economy literally scales with the artificial intelligence boom. Pure passive income."},
 
             # Easter Egg: OECS stands for Organization of Eastern Caribbean States, an economic bloc that includes several island nations and territories, many of which are featured as stops in the game. OECS countries use the Eastern Caribbean Dollar EC or XCD as their currency.
 
@@ -51,16 +47,23 @@ class Command(BaseCommand):
                 "description": "The Nature Island! Find Shalini Agarwal at the hiking festival and execute the pitch flawlessly."},
         ]
 
+        list_of_stops = []
+
         for index, stop in enumerate(stops_along_journey):
-            Location.objects.create(
+            list_of_stops.append(Location(
                 sequence_in_journey=index + 1,
                 name=stop["name"],
                 description=stop["description"],
                 latitude=stop["latitude"],
                 longitude=stop["longitude"]
-            )
-            self.stdout.write(self.style.SUCCESS(
-                f'Created stop {index + 1}: {stop["name"]}'))
+            ))
+
+        Location.objects.bulk_create(list_of_stops)
+
+        """
+        Success message was removed from inside the loop since this is now incorrect due to the use of bulk_create. Instead, we can print a single success message after all stops have been created, indicating how many stops were loaded into the database.
+        """
 
         self.stdout.write(self.style.SUCCESS(
-            'Successfully loaded island data and initialized game state.'))
+            f'Successfully loaded {len(list_of_stops)} islands/stops to the database via bulk_create.'
+        ))
