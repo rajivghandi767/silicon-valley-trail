@@ -1,275 +1,143 @@
 import json
-import random
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
-from .models import GameState, Location
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+from .models import Location
 from .services.weather import check_marine_conditions, check_aviation_conditions
+from .engine.constants import INTRO_MESSAGE, REBOOT_MESSAGE, VICTORY_MESSAGE, ACTION_BASE_MESSAGES
+from .engine.state import CacheGameState
+from .engine.events import trigger_random_event
 
-# ==========================================
-# ENDPOINT 1: Get the current game state
-# ==========================================
+
+def get_session_cache_key(request):
+    if not request.session.session_key:
+        request.session.create()
+    return f"svt_game_{request.session.session_key}"
 
 
+@ensure_csrf_cookie
 @require_http_methods(["GET"])
 def get_state(request):
-    """
-    This acts as the session manager.
-    Because the frontend is a 'dumb client', it relies entirely on this endpoint to figure out what to render if the user hard-refreshes their browser.
-    """
-    game = GameState.objects.filter(
-        session_key=request.session.session_key).first()
+    cache_key = get_session_cache_key(request)
+    game = cache.get(cache_key)
+
     if not game:
         return JsonResponse({"error": "No active game found. Start a new game."}, status=404)
 
-    # 1. Check if user refreshed the page AFTER winning
+    response_data = game.serialize_for_api()
+
     if game.is_won:
-        display_message = (
-            "🏆 VICTORY: YOU MADE IT!\n"
-            "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your LinkedIn REACH Apprenticeship awaits.\n\n"
-            "> [ FINAL STATS ]\n"
-            f"  - Days to Spare: {game.days_remaining}\n"
-            f"  - Remaining Cash: ${game.cash}\n"
-            f"  - Award Miles: {game.award_miles}\n"
-            f"  - Final Morale: {game.morale}%\n"
-            f"  - Pitch Bugs: {game.bugs}"
+        display_message = VICTORY_MESSAGE.format(
+            days=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs
         )
-
-    # 2. Check if user is at the very beginning of the game
-    elif game.current_location.sequence_in_journey == 1 and game.days_remaining == 18:
-        display_message = (
-            "Traditional application portals are a black hole. As a self-taught developer from New York, you need a different strategy to land your dream Backend Apprenticeship.\n\n"
-            "Word on the wire is that Shalini Agarwal, Senior Director of Engineering at LinkedIn and head of the REACH program, is taking a rare, unplugged vacation to attend the Nature Island Hiking Festival in Dominica 🇩🇲.\n\n"
-            "You have 18 Days, your laptop, a little bit of cash, and a stash of airline award miles.\n\n"
-            "YOUR MISSION: Island-hop your way from NYC down the Caribbean chain to Dominica.\n\n"
-            "Manage your resources, navigate real-time tropical weather, keep your morale high, and ensure your code is bug-free so you can deliver a flawless pitch!\n\n"
-            "// THE JOURNEY BEGINS IN NEW YORK CITY 🇺🇸. TO GET STARTED, CHOOSE AN ACTION BELOW ..."
-        )
-
-    # 3. If user is mid-game, just restore the session
+    elif game.current_location_id == 1 and game.days_remaining == 18:
+        display_message = INTRO_MESSAGE
     else:
+        location_name = response_data.get('current_location', 'UNKNOWN')
         display_message = (
             "// SECURE SESSION RESTORED...\n"
-            f"// RESUMING AT STOP {game.current_location.sequence_in_journey}: {game.current_location.name.upper()}\n\n"
+            f"// RESUMING AT STOP {game.current_location_id}: {location_name.upper()}\n\n"
             "// Awaiting your next command..."
         )
 
-    response_data = game.serialize_for_api()
     response_data["message"] = display_message
     return JsonResponse(response_data)
 
-# =========================================================
-# ENDPOINT 2: Take an action (travel, rest, code, mentor)
-# =========================================================
 
-
-@csrf_exempt
 @require_http_methods(["POST"])
 def take_action(request):
-    """
-    This is the Core Engine Loop.
-    Strictly accepts POST requests.
-    Calculates resource deltas based on user choices, integrates external weather constraints, and rolls for random events.
-    """
+    cache_key = get_session_cache_key(request)
+    game = cache.get(cache_key)
 
-    game = GameState.objects.filter(
-        session_key=request.session.session_key).first()
     if not game:
-        return JsonResponse({"error": "No active game found. Start a new game."}, status=404)
-
-    # Prevent actions if the game is already over i.e won or lost
+        return JsonResponse({"error": "No active game found."}, status=404)
     if game.is_lost or game.is_won:
-        response_data = game.serialize_for_api()
-        response_data["error"] = "The game has ended. Please restart."
-        return JsonResponse(response_data, status=400)
+        return JsonResponse({"error": "The game has ended. Please restart."}, status=400)
 
     try:
         data = json.loads(request.body)
         action = data.get("action")
 
-        action_names = {
-            'code': 'write code', 'mentor': 'mentor local devs', 'rest': 'rest',
-            'travel_ferry': 'take the ferry', 'travel_flight': 'take a flight'
-        }
-        turn_message = f"> You elected to {action_names.get(action, action)}.\n\n"
-
-        # Initialize variables to track if the player successfully traveled (used for triggering random events) and to store the next location object after travel.
+        turn_message = f"> Action initiated...\n\n"
         successful_travel = False
-        next_location = None
 
-        # Store _ morale and bugs values to calculate deltas for the turn summary message and prevent negative values from being assigned/displayed.
-        previous_morale = game.morale
-        previous_bugs = game.bugs
+        # 1. STATIONARY ACTIONS
+        if action in ACTION_BASE_MESSAGES:
+            if action == 'rest':
+                game.morale += 40
+                game.cash -= 100
+                game.days_remaining -= 1
+            elif action == 'code':
+                game.bugs -= 10
+                game.morale -= 20
+                game.days_remaining -= 1
+            elif action == 'mentor':
+                game.days_remaining -= 1
+                game.morale += 20
+                game.bugs -= 10
+            turn_message += ACTION_BASE_MESSAGES[action]
 
-        # --- STATIONARY ACTIONS (NO RANDOM EVENTS GENERATED) ---
-        if action == 'rest':
-            game.morale += 40
-            game.cash -= 100
-            game.days_remaining -= 1
-            turn_message += "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)"
-
-        elif action == 'code':
-            game.bugs -= 10
-            game.morale -= 20
-            game.days_remaining -= 1
-            turn_message += "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)"
-
-        elif action == 'mentor':
-            game.days_remaining -= 1
-            game.morale += 20
-            game.bugs -= 10
-            turn_message += "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
-
-        # --- TRAVEL ACTIONS (TRIGGERS RANDOM EVENTS) ---
+        # 2. TRAVEL ACTIONS
         elif action in ['travel_ferry', 'travel_flight']:
-            next_location = Location.objects.filter(
-                sequence_in_journey=game.current_location.sequence_in_journey + 1).first()
-            if not next_location:
-                response_data = game.serialize_for_api()
-                response_data["message"] = "You are already at the final destination!"
-                return JsonResponse(response_data, status=200)
+            next_loc = Location.objects.filter(
+                sequence_in_journey=game.current_location_id + 1).first()
 
             if action == 'travel_ferry':
                 is_rough_seas, wave_height = check_marine_conditions(
-                    next_location.latitude, next_location.longitude)
-                turn_message += f"> Sea Conditions: {wave_height}m wave height detected.\n\n"
+                    next_loc.latitude, next_loc.longitude)
+                turn_message += f"> Sea Conditions: {wave_height}m waves.\n\n"
                 if is_rough_seas:
                     game.morale -= 20
                     game.days_remaining -= 1
-                    turn_message += f"> Result:\n  - SMALL CRAFT ADVISORY! Ferries grounded.\n  - Still in {game.current_location.name} (-1 Day)"
+                    turn_message += f"> Result: SMALL CRAFT ADVISORY! Ferries grounded. (-1 Day)"
                 else:
                     game.cash -= 150
                     game.morale -= 10
                     game.days_remaining -= 1
-                    game.current_location = next_location
+                    game.current_location_id = next_loc.sequence_in_journey
                     successful_travel = True
-                    turn_message = f"> You took the ferry and safely made it to {next_location.name}. The sea breeze was nice, but the trip was exhausting.\n\n> Result:\n  - Funds deducted (-$150)\n  - Time elapsed (-1 Day)"
+                    turn_message += f"> Safely made it to {next_loc.name}. (-$150, -1 Day)"
 
             elif action == 'travel_flight':
                 if game.award_miles < 2000:
-                    turn_message += "> Insufficient Award Miles. Transaction declined."
-                    response_data = game.serialize_for_api()
-                    response_data["message"] = turn_message
-                    return JsonResponse(response_data, status=200)
+                    return JsonResponse({"error": "Insufficient Award Miles."}, status=400)
 
                 is_thunderstorm, is_turbulent = check_aviation_conditions(
-                    next_location.latitude, next_location.longitude)
+                    next_loc.latitude, next_loc.longitude)
                 if is_thunderstorm:
                     game.morale -= 15
                     game.days_remaining -= 1
-                    turn_message += f"> Flight Conditions: Thunderstorms detected!\n\n> Result:\n  - ATC GROUND STOP! Flights canceled.\n  - Still in {game.current_location.name} (-1 Day)"
+                    turn_message += f"> Result: ATC GROUND STOP! Flights canceled. (-1 Day)"
                 else:
                     game.award_miles -= 2000
                     game.days_remaining -= 1
-                    game.current_location = next_location
+                    game.current_location_id = next_loc.sequence_in_journey
                     successful_travel = True
-
                     if is_turbulent:
                         game.morale -= 15
-                        turn_message += f"> Flight Conditions: High winds & turbulence.\n\n> Result:\n  - Landed in {next_location.name}, but flight was awful.\n  - Miles redeemed (-2000)\n  - Time elapsed (-1 Day)"
+                        turn_message += f"> Result: Landed in {next_loc.name}, awful flight. (-2000 Miles, -1 Day)"
                     else:
                         game.morale += 10
-                        turn_message += f"> Flight Conditions: Clear skies.\n\n> Result:\n  - Smooth flight to {next_location.name}. Lounge access helped.\n  - Miles redeemed (-2000)\n  - Time elapsed (-1 Day)"
+                        turn_message += f"> Result: Smooth flight to {next_loc.name}. (-2000 Miles, -1 Day)"
 
-            # ==========================================
-            # RANDOM EVENTS (ONLY HAPPENS AFTER TRAVEL)
-            # ==========================================
-            if successful_travel and next_location:
-                event_roll = random.randint(1, 12)
-                event_text = ""
+            # 3. RANDOM EVENTS
+            if successful_travel and next_loc:
+                event_message = trigger_random_event(
+                    game, next_loc.name)  # See note below
+                turn_message += f"\n\n> {event_message}"
 
-                if event_roll == 1:
-                    game.bugs += 20
-                    event_text = "A silent React dependency update broke your staging environment!"
-                elif event_roll == 2:
-                    game.cash -= 150
-                    event_text = "You left your laptop charger at TSA and had to buy an overpriced replacement. (-$150)"
-                elif event_roll == 3:
-                    game.days_remaining -= 1
-                    game.morale -= 10
-                    event_text = "You over-engineered your API architecture. You lost a day rewriting it. (-1 Day)"
-                elif event_roll == 4:
-                    game.morale += 25
-                    event_text = f"You found an expat bar showing the Chelsea match. They secured 3 points!"
-                elif event_roll == 5:
-                    game.bugs -= 20
-                    event_text = f"A new submarine fiber cable provided single-digit ping. You destroyed your backlog."
-                elif event_roll == 6:
-                    game.award_miles += 2000
-                    event_text = "A delayed flight finally paid out AAdvantage compensation! (+2000 Miles)"
-                elif event_roll == 7:
-                    game.morale -= 20
-                    event_text = "Imposter syndrome hit hard after reviewing a Senior Engineer's portfolio."
-                elif event_roll == 8:
-                    game.bugs += 15
-                    game.days_remaining -= 1
-                    event_text = "You accidentally pushed your .env file to GitHub. You spent a day rotating keys. (-1 Day)"
-                elif event_roll == 9:
-                    game.cash += 500
-                    event_text = "You helped a local dive shop fix their booking database. They paid you in cash! (+ $500)"
-                elif event_roll == 10:
-                    game.bugs -= 15
-                    game.morale += 15
-                    event_text = "You connected with a REACH Alumni on LinkedIn who reviewed your PRs!"
-                elif event_roll == 11:
-                    game.cash -= 120
-                    game.morale += 30
-                    event_text = "You stumbled into a Bilt Dining experience. The pescatarian menu was incredible! (-$120)"
-                elif event_roll == 12:
-                    game.days_remaining -= 1
-                    event_text = "Carnival season! A DDoS attack of sound and color. You couldn't work at all. (-1 Day)"
-
-                turn_message += f"\n\n> On arrival in {next_location.name}, {event_text}"
-
-        # --- CLAMPING BLOCK ---
-        # Regardless of what happened above, we enforce strict boundaries on morale and bugs to prevent negative values or values that exceed loss conditions from being assigned to the game state. This ensures that the frontend can always safely display the current state without needing to handle edge cases for negative morale or bugs above 50.
-        game.morale = max(0, min(100, game.morale))
-        game.bugs = max(0, game.bugs)
-
-        # Save the game state after processing the action, weather conditions, and random events. This ensures that when the frontend calls the GET endpoint to refresh the session, it receives the most up-to-date and accurate game state reflecting all the consequences of the player's last action.
-        game.save()
-
-        # ====================================================
-        # POST-ACTION STATE VALIDATION (Deltas & Win/Loss)
-        # ====================================================
-
-        # A. Calculate dynamic deltas for UI feedback based on the CLAMPED state
-        morale_delta = game.morale - previous_morale
-        if morale_delta > 0:
-            turn_message += f"\n  - Morale restored (+{morale_delta})"
-        elif morale_delta < 0:
-            turn_message += f"\n  - Morale decreased ({morale_delta})"
-
-        bug_delta = game.bugs - previous_bugs
-        if bug_delta < 0:
-            turn_message += f"\n  - Bugs squashed ({bug_delta})"
-        elif bug_delta > 0:
-            turn_message += f"\n  - Bugs introduced (+{bug_delta})"
+        # 4. FINALIZE TURN
+        game.apply_boundaries()
+        cache.set(cache_key, game, timeout=86400)  # Save back to DB Cache
 
         if game.is_won:
-            turn_message = (
-                "🏆 VICTORY: YOU SURVIVED THE TRAIL!\n"
-                "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your apprenticeship awaits.\n\n"
-                "> [ FINAL STATS ]\n"
-                f"  - Days to Spare: {game.days_remaining}\n"
-                f"  - Remaining Cash: ${game.cash}\n"
-                f"  - Award Miles: {game.award_miles}\n"
-                f"  - Final Morale: {game.morale}%\n"
-                f"  - Pitch Bugs: {game.bugs}"
-            )
+            turn_message = VICTORY_MESSAGE.format(
+                days=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs)
         elif game.is_lost:
-            if game.days_remaining <= 0:
-                turn_message = "💀 FATAL EXCEPTION: You ran out of days. The festival ended before you reached Dominica."
-            elif game.cash < 0:
-                turn_message = "💀 FATAL EXCEPTION: You went bankrupt. You are stranded in the Caribbean."
-            elif game.bugs >= 50:
-                turn_message = "💀 FATAL EXCEPTION: Your MVP crashed during the pitch. The codebase was overwhelmed with 50+ bugs."
-            elif game.morale <= 0:
-                turn_message = "💀 FATAL EXCEPTION: Burnout. Your morale hit 0 and you closed your laptop for good."
+            turn_message = game.get_loss_reason()
 
-        # ==========================================
-        # FINAL OUTPUT TO FRONTEND
-        # ==========================================
         response_data = game.serialize_for_api()
         response_data["message"] = turn_message
         return JsonResponse(response_data, status=200)
@@ -277,45 +145,15 @@ def take_action(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-# ==========================================
-# ENDPOINT 3: Restart the game
-# ==========================================
 
-
-@csrf_exempt
 @require_http_methods(["POST"])
 def restart_game(request):
-    """
-    Resets the active session back to the default starting state.
-    """
-    try:
-        # Safely fetch the starting location.
-        first_location = Location.objects.get(sequence_in_journey=1)
-    except Location.DoesNotExist:
-        return JsonResponse({"error": "System Error: Starting location not found in database."}, status=500)
+    cache_key = get_session_cache_key(request)
 
-    # This allows concurrent gameplay without having to collect user info or implement authentication. Each browser session gets its own unique game state that persists across page reloads until they choose to restart or end the session.
-    if not request.session.session_key:
-        request.session.create()
+    # Initialize a fresh cache state starting at Location ID 1
+    new_game = CacheGameState(current_location_id=1)
+    cache.set(cache_key, new_game, timeout=86400)
 
-    session_id = request.session.session_key
-
-    game = GameState.reset_game(first_location, session_id)
-
-    # Reboot Message
-    reboot_message = (
-        "// GAME RESTART SEQUENCE INITIATED...\n"
-        "// MEMORY CLEARED. SECURE BACKEND API CONNECTION RE-ESTABLISHED.\n\n"
-        "> SHALINI (LinkedIn REACH): Rough run, but failure is just data. Let's try this again.\n\n"
-        "Traditional application portals are a black hole. As a self-taught developer from New York, you need a different strategy to land your dream Backend Apprenticeship.\n\n"
-        "Word on the wire is that Shalini Agarwal, Senior Director of Engineering at LinkedIn and head of the REACH program, is taking a rare, unplugged vacation to attend the Nature Island Hiking Festival in Dominica 🇩🇲.\n\n"
-        "You have 18 Days, your laptop, a little bit of cash, and a stash of airline award miles.\n\n"
-        "YOUR MISSION: Island-hop your way from NYC down the Caribbean chain to Dominica.\n\n"
-        "Manage your resources, navigate real-time tropical weather, keep your morale high, and ensure your code is bug-free so you can deliver a flawless pitch!\n\n"
-        "// Awaiting your command..."
-    )
-
-    response_data = game.serialize_for_api()
-    response_data["message"] = reboot_message
-
+    response_data = new_game.serialize_for_api()
+    response_data["message"] = REBOOT_MESSAGE
     return JsonResponse(response_data, status=200)

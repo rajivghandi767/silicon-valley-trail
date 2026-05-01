@@ -27,8 +27,28 @@ VICTORY_MESSAGE = (
     "  - Pitch Bugs: {bugs}"
 )
 
-# Defeat Conditions
-DEFEAT_TIME = "💀 FATAL EXCEPTION: You ran out of days. The festival ended before you reached Dominica."
-DEFEAT_BANKRUPT = "💀 FATAL EXCEPTION: You went bankrupt. You are stranded in the Caribbean."
-DEFEAT_BUGS = "💀 FATAL EXCEPTION: Your MVP crashed during the pitch. The codebase was overwhelmed with 50+ bugs."
-DEFEAT_MORALE = "💀 FATAL EXCEPTION: Burnout. Your morale hit 0 and you closed your laptop for good."
+# --- Status Summaries ---
+STATUS_WON = "MISSION ACCOMPLISHED. Secure connection closed."
+STATUS_LOST = "SYSTEM FAILURE. Secure connection closed."
+STATUS_ACTIVE = "Currently in {location_name} with ${cash} cash, {award_miles} miles, {morale}% morale, {bugs} bugs, and {days_remaining} days remaining."
+
+SESSION_RESTORED_MESSAGE = (
+    "// SECURE SESSION RESTORED...\n"
+    "// RESUMING AT STOP {stop_number}: {location_name}\n\n"
+    "// Awaiting your next command..."
+)
+
+# --- Action & Turn Messages ---
+ACTION_BASE_MESSAGES = {
+    'rest': "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)",
+    'code': "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)",
+    'mentor': "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
+}
+
+# Dictionary mapping failure conditions to their UI messages
+DEFEAT_MESSAGES = {
+    "time": "💀 FATAL EXCEPTION: You ran out of days or it is mathematically impossible to reach Dominica in time.",
+    "bankrupt": "💀 FATAL EXCEPTION: You went bankrupt and ran out of miles. You are stranded in the Caribbean.",
+    "bugs": "💀 FATAL EXCEPTION: Your MVP crashed during the pitch. The codebase was overwhelmed with 50+ bugs.",
+    "morale": "💀 FATAL EXCEPTION: Burnout. Your morale hit 0 and you closed your laptop for good."
+}

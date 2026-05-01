@@ -2,7 +2,7 @@
 import random
 
 
-def trigger_random_event(game):
+def trigger_random_event(game, location_name):
     """
     Rolls a 12-sided die to determine a random event upon successful travel.
     Mutates the cached game state directly and returns the narrative string.
@@ -51,4 +51,4 @@ def trigger_random_event(game):
         game.days_remaining -= 1
         event_text = "Carnival season! A DDoS attack of sound and color. You couldn't work at all. (-1 Day)"
 
-    return event_text
+    return f"\n\n> On arrival in {location_name}, {event_text}"

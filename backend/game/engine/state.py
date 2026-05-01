@@ -1,6 +1,6 @@
-# Place this in views.py (or import it from a new file)
-import json
+# backend/game/engine/state.py
 from ..models import Location
+from .constants import STATUS_WON, STATUS_LOST, STATUS_ACTIVE, DEFEAT_MESSAGES
 
 
 class CacheGameState:
@@ -14,10 +14,7 @@ class CacheGameState:
 
     @property
     def is_lost(self):
-        """
-        Refactored loss conditions to account for when winning is no longer mathematically possible, even if the player hasn't technically run out of resources yet. This prevents scenarios where a player could continue playing indefinitely in a hopeless situation, and provides clearer feedback on why they lost.
-        """
-        stops_remaining = 10 - self.current_location.sequence_in_journey
+        stops_remaining = 10 - self.current_location_id
         if self.days_remaining < stops_remaining:
             return True
         if self.morale <= 0:
@@ -27,29 +24,46 @@ class CacheGameState:
         if self.cash < 0 and self.award_miles < 0:
             return True
         return False
-        # Loss conditions: Running out of cash, miles, morale, or reaching the bug threshold or day limit.
-        # return self.morale <= 0 or self.bugs >= 50 or self.days_remaining <= 0 or self.cash < 0
 
     @property
     def is_won(self):
-        """
-        Refactored to Explicitly check for the win condition of reaching the final destination (Stop 10) while ensuring the player hasn't already lost. This prevents any edge cases where a player might technically reach Stop 10 but has already triggered a loss condition, ensuring the game logic remains consistent and intuitive.
-        """
-        # Win condition: Successfully reaching the final destination (Stop 10). Resource checks are handled by the is_lost property above.
-        return self.current_location.sequence_in_journey == 10 and not self.is_lost
+        return self.current_location_id == 10 and not self.is_lost
+
+    def apply_boundaries(self):
+        """Prevents negative states from hitting the UI"""
+        self.morale = max(0, min(100, self.morale))
+        self.bugs = max(0, self.bugs)
+
+    def get_loss_reason(self):
+        """Maps the exact loss condition to the constant message"""
+        stops_remaining = 10 - self.current_location_id
+        if self.days_remaining < stops_remaining:
+            return DEFEAT_MESSAGES["time"]
+        if self.cash < 0 and self.award_miles < 0:
+            return DEFEAT_MESSAGES["bankrupt"]
+        if self.bugs >= 50:
+            return DEFEAT_MESSAGES["bugs"]
+        if self.morale <= 0:
+            return DEFEAT_MESSAGES["morale"]
+        return "SYSTEM FAILURE."
 
     def serialize_for_api(self):
-
-        # Fetch the persistent Location object using the cached ID
         location = Location.objects.filter(
             sequence_in_journey=self.current_location_id).first()
 
         if self.is_won:
-            status_text = "MISSION ACCOMPLISHED. Secure connection closed."
+            status_text = STATUS_WON
         elif self.is_lost:
-            status_text = "SYSTEM FAILURE. Secure connection closed."
+            status_text = STATUS_LOST
         else:
-            status_text = f"Currently in {location.name} with ${self.cash} cash, {self.award_miles} miles, {self.morale}% morale, {self.bugs} bugs, and {self.days_remaining} days remaining."
+            status_text = STATUS_ACTIVE.format(
+                location_name=location.name if location else "Unknown",
+                cash=self.cash,
+                award_miles=self.award_miles,
+                morale=self.morale,
+                bugs=self.bugs,
+                days_remaining=self.days_remaining
+            )
 
         return {
             "current_location": location.name if location else "Unknown",
