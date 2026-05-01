@@ -1,262 +1,92 @@
-# ✈️ 🏞️ 💻 Silicon Valley Trail: Caribbean Edition - A LinkedIn REACH Project
+# 🌴 Silicon Valley Trail
 
-**An API-driven, containerized backend application built for the LinkedIn REACH Apprenticeship.**
+**Silicon Valley Trail** is an interactive, full-stack web application originally developed as a submission for the LinkedIn REACH Backend Apprenticeship program. Inspired by the classic Oregon Trail, players must manage resources, technical debt, and real-time Caribbean weather conditions to successfully pitch a Senior Engineering Director vacationing in Dominica.
 
-_Traditional application portals are a black hole. As a self-taught developer from New York, you need a different strategy to land your dream Backend Apprenticeship. Word on the wire is that the head of the REACH program is taking a rare, unplugged vacation at the Nature Island Hiking Festival in Dominica. Your mission: Island-hop your way from NYC down the Caribbean chain to deliver a flawless solo pitch. Manage your limited resources, navigate real-time tropical weather, keep your morale high, and ensure your codebase remains bug-free!_
+This repository demonstrates modern web development practices, focusing heavily on **systems architecture, CI/CD automation, and resource optimization** for self-hosted infrastructure.
 
-This turn-based strategy game focuses on robust backend design, resource management, and external API integration. It utilizes a pure Django game engine to act as the single source of truth—handling complex state calculations, enforcing strict game-loop validations, and processing real-time marine and aviation weather data to dynamically influence gameplay. The project is fully Dockerized and self-hosted on bare-metal homelab infrastructure.
-
-**Live Demo**: [**silicon-valley-trail.rajivwallace.com**](https://silicon-valley-trail.rajivwallace.com)
-
-> ⚠️ **Note to Reviewers:** As the focus of this assessment is strictly on server-side logic, data modeling, and backend architecture, frontend and UI/UX polish is beyond the scope of this project. The live demo is designed for **Desktop viewing only** and is not optimized for mobile screens.
-
----
-
-## 📜 Table of Contents
-
-- [📖 Architecture Overview](#-architecture-overview)
-- [🔧 Tech Stack](#-tech-stack)
-- [🚀 Deployment & Infrastructure](#-deployment--infrastructure)
-- [💻 Quick Start Guide](#-quick-start-guide)
-- [🧪 Testing](#-testing)
-- [🎮 How to Play](#-how-to-play)
-- [🤖 Use of AI](#-use-of-ai)
-- [🧠 Design Notes](#-design-notes)
-- [🙏🏾 Acknowlegements](#-acknowledgements)
-- [📬 Contact](#-contact)
+![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)
+![Django](https://img.shields.io/badge/Django-092E20?style=flat&logo=django&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=flat&logo=docker&logoColor=white)
+![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat&logo=jenkins&logoColor=white)
 
 ---
 
-## 📖 Architecture Overview
+## 🏗️ Architecture & Tech Stack
 
-This project strictly follows a **"Smart Server / Dumb Client"** architecture to ensure absolute state security and prevent browser manipulation but also since UI/UX are beyond the scope of the assignment:
+This project is deployed on a custom Homelab infrastructure (Raspberry Pi 4B running headless DietPi), requiring strict memory management and highly optimized I/O operations.
 
-- **Frontend (Dumb Client):** A React/Vite application that only captures user input and renders the JSON state provided by the backend. It contains zero game logic. Standard CLI inputs are bypassed; instead, "commands" are transmitted as JSON payloads via the UI buttons (e.g., `POST /api/action/` -> `{"action": "travel_flight"}`).
-- **Backend (Smart Server):** A Python/Django application acting as the authoritative game engine. It calculates resource deltas, enforces rules, communicates with external weather APIs, and controls the single source of truth.
-- **Proxy Routing:** A multi-stage Docker build uses Nginx to serve the static React frontend while reverse-proxying `/api/` and `/admin/` requests to the Django backend served via Gunicorn.
-
----
-
-## 🔧 Tech Stack
-
-### **Backend & DB**
-
-- 🐍 Python
-- 🚀 Django/SQLite
-
-### **API Used**
-
-- ☁️ Open-Meteo Weather Forecast API
-- 🌊 Open-Meteo Marine Weather API
-
-### **Frontend**
-
-- ⚛️ React
-- 🔵 TypeScript
-- 🍃 CSS & Vite
-
-### **Infrastructure**
-
-- 🐳 Docker & Docker Compose
-- 🌐 Nginx Proxy Manager (Reverse Proxy)
+- **Frontend:** TypeScript, React, Vite, standard CSS.
+- **Backend:** Python, Django (utilizing standard views and `JsonResponse`), Prometheus metrics.
+- **Database & Caching:** PostgreSQL.
+- **External APIs:** Open-Meteo (Real-time Marine & Aviation forecasting).
+- **Infrastructure:** Docker, Nginx Proxy Manager, Cloudflare.
+- **CI/CD:** Jenkins, GitHub Container Registry (ghcr.io), HashiCorp Vault.
 
 ---
 
-## 🚀 Deployment & Infrastructure
+## 🚀 Engineering Highlights & Optimizations
 
-The live demo is fully self-hosted and deployed on a bare-metal homelab environment:
+### 1. Database Caching for Game State Management
 
-- **Hardware:** Raspberry Pi 4B running DietPi (headless Debian).
-- **Containerization:** The entire stack is completely containerized and orchestrated using `docker compose` or `docker compose`, (depending on Docker Compose version).
-- **Traffic Management:** Cloudflare manages DNS and SSL edge encryption, routing incoming traffic to an Nginx Proxy Manager instance on the host machine, which then securely proxies requests to the application's internal container port. This was possible since I have invested in my own domain, rajivwallace.com.
+To conserve memory and minimize disk I/O on the host machine, temporary game state was completely decoupled from the Django ORM. Instead of spinning up a dedicated Redis container, the application utilizes `django.core.cache.backends.db.DatabaseCache` to write serialized Python objects directly to a lightweight, auto-culling PostgreSQL cache table. Persistent data (like island coordinates) remains in standard relational tables.
 
----
+### 2. "Skinny Views, Fat Services"
 
-## 💻 Quick Start Guide
+The backend architecture strictly adheres to modular design principles.
 
-### Option 1: Docker (Recommended)
+- Complex external API logic (weather forecasting) is abstracted into a dedicated `services` layer.
+- Dynamic game states, win/loss boundaries, and statistical mutations are handled by an isolated `engine`.
+- All narrative strings and status messages are decentralized into `constants.py`, leaving the HTTP routing (`views.py`) clean, readable, and highly testable.
 
-Ensure Docker is installed and running on your machine.
+### 3. Production-Grade Security & Routing
 
-First, clone the repository and navigate into the project directory:
+- **Nginx Preflight Interception:** CORS is handled entirely at the Nginx reverse-proxy level using `$http_origin` maps, instantly returning `204 No Content` for `OPTIONS` requests without waking up Django Gunicorn workers.
+- **CSRF Protection:** Full CSRF handshake implementation between the React SPA and Django via `@ensure_csrf_cookie` and `X-CSRFToken` headers.
+- **Rate Limiting:** Dedicated Nginx zones established to protect the API, admin panels, and static file delivery from abuse.
 
-```bash
-git clone [https://github.com/rajivghandi767/silicon-valley-trail.git](https://github.com/rajivghandi767/silicon-valley-trail.git)
-cd silicon-valley-trail
-```
+### 4. Automated CI/CD Pipeline
 
-Then, boot the containers using the command that matches your version of Docker:
+Deployment is fully automated via Jenkins Multibranch Pipelines (`Jenkinsfile` and `Jenkinsfile.deploy`).
 
-```bash
-# For newer versions of Docker (Docker Compose V2)
-docker compose up -d --build
-
-# For older versions of Docker (Docker Compose V1)
-docker-compose up -d --build
-```
-
-- **Frontend UI:** `http://localhost:5173`
-- **Backend API:** `http://localhost:8000/api/state/`
-
-### Option 2: Local Setup (Without Docker)
-
-If you prefer to run the environments manually:
-
-**1. Start the Django Backend:**
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py load_islands
-python manage.py runserver
-```
-
-**2. Start the React Frontend:**
-Open a new terminal window:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 🔑 API Keys & Environment Variables
-
-To eliminate reviewer friction, the chosen external API (Open-Meteo) requires NO authentication keys and the `settings.py` file is properly factored for fallbacks.
-
-However, to demonstrate standard security practices, a `.env.example` file is included in the root directory. In a production environment, this would house the `DJANGO_SECRET_KEY` and third-party tokens.
+1. **Build:** Jenkins checks out the code, builds the `backend`, `frontend`, and `nginx` Docker images, tags them with the Git commit hash, and pushes them to GitHub Container Registry.
+2. **Secrets Injection:** The deployment script dynamically authenticates with **HashiCorp Vault** (via AppRole) to securely pull and generate the `.env.prod` file directly on the host agent.
+3. **Deploy:** A remote SSH command pulls the latest images and spins up the Docker Compose stack seamlessly.
 
 ---
 
-## 🧪 Testing
+## 💻 Local Development
 
-This project utilizes Django's built-in `unittest` framework (`django.test.TestCase`) to ensure the core game mechanics and resource economy function correctly without regressions. The test suite is designed to cover 5 distinct operational paradigms:
+### Prerequisites
 
-1. **Initial State & Serialization:** Validates the model boots with correct default limits and maps Python objects to the JSON API correctly.
-2. **Resource Economy:** Verifies that stationary actions correctly calculate mathematical deltas (e.g., resting caps morale boosts while deducting time and cash).
-3. **Dependency Mocking:** Utilizes `@patch` to mock external API weather data and control RNG behavior, ensuring deterministic state progression.
-4. **Network Fallbacks:** Intentionally forces an exception in `urllib` to prove the backend's "Fail Aggressive" logic intercepts fatal network timeouts without crashing the game loop.
-5. **Boundary Constraints:** Verifies terminal states by manually injecting 50 bugs into the database to prove the Game Over safety lock functions securely.
+- Docker & Docker Compose
+- Git
 
-**How to run Tests:**
-Ensure your virtual environment is activated, navigate to the `backend/` directory, and run:
+### Quick Start
 
-```bash
-python manage.py test
-```
+1. **Clone the repository:**
 
----
+   ```bash
+   git clone [https://github.com/rajivghandi767/silicon-valley-trail.git](https://github.com/rajivghandi767/silicon-valley-trail.git)
+   cd silicon-valley-trail
+   ```
 
-## 🎮 How to Play
+2. **Environment Variables:**
+   Copy the example environment files and update them if necessary (the defaults work out-of-the-box for local testing).
 
-**The Goal:**
+   ```bash
+   cp .env.example
+   ```
 
-Travel through 10 locations starting in New York City, to reach your final pitch in Dominica before time or resources run out!
+3. **Spin up the stack:**
 
-**Core Actions:**
+   ```bash
+   docker compose up --build -d
+   ```
 
-- **Code:** Squashes bugs but consumes time.
-- **Mentor:** Boosts team morale at the cost of time.
-- **Rest:** Greatly recovers morale but burns days and cash.
-- **Travel by Ferry:** A cheaper option, but highly susceptible to delays based on real-time marine weather.
-- **Take a Flight:** Fast, but costs Award Miles and risks morale drops from real-time flight turbulence.
+4. **Access the application:**
+   - Frontend: `http://localhost:5173`
+   - Backend API: `http://localhost:8000/api/`
 
-_Loss Conditions: Hitting 50 bugs, dropping below $0 cash, or reaching 0 morale will result in an immediate Game Over._
-
----
-
-## 🤖 Use of AI
-
-As a self-taught developer transitioning into a backend engineering career, I treat AI as a simulated Senior Developer. Throughout this project, I utilized Google's Gemini as a pair programmer, auditor, editor, and architectural sounding board.
-
-My goal was to use AI to accelerate my learning and execution, while ensuring I fundamentally understood every line of code committed to the repository.
-
-Specifically, I leveraged AI for:
-
-- **Architectural Sounding Board:** Before writing any code, I used AI to debate system design tradeoffs, ultimately deciding on the strict "Smart Server / Dumb Client" architecture and discussing the security implications of decoupling the frontend. This was particularly helpful is weighing the pros and cons of spinning up a Postgres container vs using the SQLite contained in Django.
-- **Pair Programming:** When building the core game loop, I used AI to help isolate complex Python logic errors, catch edge-cases within my random event matrix, and discuss the nuances of Django's test client session management.
-- **Auditing & Editing:** I utilized AI as an editor to audit my test suite for coverage gaps, review my docstrings for clarity and typos, and refine this README to ensure it met my own formatting standards.
-
-While AI was an invaluable accelerator that helped me weigh technical tradeoffs, all core architectural constraints, database modeling, external API logic, and final implementations are entirely my own.
-
----
-
-## 🧠 Design Notes
-
-<details>
-<summary><b>1. Game Loop & Balance Approach</b></summary>
-The game loop utilizes a Strict Server-Authoritative Architecture (Smart Server / Dumb Client). The React frontend only transmits intended actions (e.g., "travel_ferry") and renders the resulting JSON state. The Django backend executes the core loop: evaluating the move, securely fetching API data, deducting resources, executing RNG events, and checking Win/Loss conditions.
-
-Balance Approach: I designed the resources to constantly tension against each other, fine-tuned for a fast-paced 10-stop sprint:
-
-- **Time vs. Health:** Resting restores Morale but burns Days and Cash.
-- **Risk vs. Reward:** Ferries are cheap but highly susceptible to weather delays. Flights are fast but require premium Award Miles.
-- **Smart Deltas:** To maintain a polished UI, the backend calculates precise resource deltas, ensuring stats never overflow their caps (e.g., max 100 Morale) and omitting redundant text.
-- **Strict Constraints:** Reaching 50 Bugs or 0 Morale triggers an immediate "Fatal Exception" game over, forcing players to actively balance coding against traveling.
-</details>
-
-<details>
-<summary><b>2. Why I Chose My APIs & How They Affect Gameplay</b></summary>
-I chose the Open-Meteo API because it requires no authentication (preventing .env setup friction for reviewing engineers) and provides incredibly granular meteorological data.
-
-Instead of a single API proxy, I implemented a Multi-Domain Routing Strategy, enhanced by a Dynamic Volatility Modifier:
-
-- **Ferry Travel (Marine Weather API):** Queries real-time wave_height. Because the Caribbean has relatively good weather, the backend blends the fetched data with an RNG to simulate rough sea probability, ensuring ferries carry inherent risk.
-- **Flight Travel (Weather Forecast API):** Queries atmospheric WMO weather codes and wind speeds. Thunderstorms ground flights entirely, while a dynamic math function calculates turbulence probability based on live wind speed, resulting in Morale penalties.
-</details>
-
-<details>
-<summary><b>3. Data Modeling (State, Events, Persistence)</b></summary>
-
-- **Session-Based "Accountless" Auth:** I utilized Django's built in `request.session.session_key` to map the `GameState` to the player's browser. This allows concurrent gameplay, while maintaining a secure, persistent state on the server without collecting personal information.
-- **Context-Aware State:** The GameState model acts as the single source of truth. To strictly enforce the "Dumb Client" UI, the model dynamically generates a status_summary. Instead of React parsing logic to figure out if the game is over, Django pushes the exact terminal readout directly to the frontend via a custom `serialize_for_api()` method.
-- **Database Seeding via Management Commands:** Instead of using raw SQL or hardcoded JSON fixtures, I built a custom Django management command (`load_islands.py`). This allows for a robust, repeatable database seed process that integrates seamlessly into the Docker build sequence.
-</details>
-
-<details>
-<summary><b>4. Error Handling (Network Failures & Rate Limits)</b></summary>
-
-- **Network Failures (Failing Aggressive):** To ensure the game can be played offline or in degraded network environments, all urllib API calls are wrapped in a strict 3-second timeout try/except block. If the API fails, the backend doesn't "fail safe" (which would make the game too easy); it "fails aggressive" by defaulting to a localized RNG dice roll, preserving gameplay tension while guaranteeing the loop never crashes.
-- **Rate Limits:** Open-Meteo allows 10,000 free daily requests. By restricting API calls only to travel actions, the application heavily throttles its own outbound requests, ensuring it will never hit a rate limit.
-</details>
-
-<details open>
-<summary><b>5. Tradeoffs & "If I had more time"</b></summary>
-
-**The Tradeoffs:**
-
-- **Security vs. Evaluator Friction (CSRF Bypass):** In a production environment, a decoupled React frontend communicating with a Django API requires strict CSRF token management or JWT authentication. To ensure zero-friction local testing for the reviewing engineers, I opted to use the `@csrf_exempt` decorator on the API routes.
-- **Internal State RNG vs. External APIs:** I traded infinite external variety for a hardcoded internal RNG event system. This tradeoff allowed me to tightly couple distinct events to specific game resources and craft a specific narrative that a generic API couldn't provide.
-- **Dependency Minimization vs. Developer Experience (DX):** I traded the developer ergonomics of the `requests` library for Python's built-in `urllib`. This slightly clunkier DX was worth the tradeoff to guarantee a zero-dependency setup.
-
-**If I had more time (Future Iterations):**
-Because this application is designed around a tight, stateless game loop, I intentionally avoided feature bloat that would require messy database migrations. However, if I had a bit more time to iterate, I'd love to tackle the following:
-
-1. **API Caching to Fix UI Delays:** During testing, I noticed a slight delay when choosing "Ferry" or "Flight" because the backend has to pause and wait for the Open-Meteo API to respond. I would love to implement Django's basic caching framework. Saving the weather data for a specific island would make the game feel much snappier.
-2. **Smarter Random Events:** Right now, the random events just use `random.randint`, meaning every event has an equal chance of happening. While testing, I realized it feels a bit weird to get a negative "burnout" event when my morale is at 100%. I'd love to implement `random.choices` to make the events react to the player's state—like making bad events more likely if you are running low on cash or morale.
-3. **Cleaning up views.py:** Currently, my `views.py` handles both the web request routing and all the core game math. As the game grew during testing, that file got a bit crowded. I'd love to spend some time pulling the core game logic out into its own separate file (like a `services.py`) just to make things cleaner and easier to read.
-4. **Database Decoupling:** Right now, the SQLite database lives directly alongside the backend to ensure a zero-friction local boot for the reviewing engineers. However, I recognize that coupling compute and storage is a massive system design no no. If I had more time, I would decouple the data layer by migrating to a dedicated PostgreSQL container. This would allow the backend API nodes to scale and increase reliability.
-</details>
-
----
-
-## 🙏🏾 Acknowledgements
-
-I would like to extend my sincere gratitude to the LinkedIn team for providing this incredibly fun and challenging technical assessment.
-
-A special thank you to my assigned recruiter, Nia Stewart, for her guidance and communication throughout this process, as well as to you my interview panel for your time, insight, and consideration.
-
-Building the Silicon Valley Trail: Caribbean Edition has been a fantastic learning experience, and I am excited about the opportunity to bring this passion for Backend Engineering to LinkedIn!
-
-I hope this interaction is as fun for you as it was for me and outside of the professional scope of this assessment, I hope you also learned something new about Dominica and the Caribbean!
-
----
-
-## 📬 Contact
-
-**Rajiv Wallace** - [LinkedIn](https://www.linkedin.com/in/rajiv-wallace)
-
-- Email: dev@rajivwallace.com
+_Note: The local development environment automatically defaults to Django's `LocMemCache` (Local Memory Cache) to completely bypass the need for generating Postgres cache tables while developing._
