@@ -14,11 +14,29 @@ class CacheGameState:
 
     @property
     def is_lost(self):
-        return self.morale <= 0 or self.bugs >= 50 or self.days_remaining <= 0 or self.cash < 0
+        """
+        Refactored loss conditions to account for when winning is no longer mathematically possible, even if the player hasn't technically run out of resources yet. This prevents scenarios where a player could continue playing indefinitely in a hopeless situation, and provides clearer feedback on why they lost.
+        """
+        stops_remaining = 10 - self.current_location.sequence_in_journey
+        if self.days_remaining < stops_remaining:
+            return True
+        if self.morale <= 0:
+            return True
+        if self.bugs >= 50:
+            return True
+        if self.cash < 0 and self.award_miles < 0:
+            return True
+        return False
+        # Loss conditions: Running out of cash, miles, morale, or reaching the bug threshold or day limit.
+        # return self.morale <= 0 or self.bugs >= 50 or self.days_remaining <= 0 or self.cash < 0
 
     @property
     def is_won(self):
-        return self.current_location_id == 10
+        """
+        Refactored to Explicitly check for the win condition of reaching the final destination (Stop 10) while ensuring the player hasn't already lost. This prevents any edge cases where a player might technically reach Stop 10 but has already triggered a loss condition, ensuring the game logic remains consistent and intuitive.
+        """
+        # Win condition: Successfully reaching the final destination (Stop 10). Resource checks are handled by the is_lost property above.
+        return self.current_location.sequence_in_journey == 10 and not self.is_lost
 
     def serialize_for_api(self):
 
