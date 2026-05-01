@@ -42,6 +42,7 @@ venv.bak/
 .vscode
 .DS_Store
 .env
+.env.development
 .vscode/* 
 !.vscode/settings.json 
 !.vscode/tasks.json 
