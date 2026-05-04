@@ -6,7 +6,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import Location
 from .services.weather import check_marine_conditions, check_aviation_conditions
-from .engine.constants import INTRO_MESSAGE, REBOOT_MESSAGE, VICTORY_MESSAGE, ACTION_BASE_MESSAGES
+from .engine.constants import INTRO_MESSAGE, REBOOT_MESSAGE, VICTORY_MESSAGE, ACTION_BASE_MESSAGES, SESSION_RESTORED_MESSAGE
 from .engine.state import CacheGameState
 from .engine.events import trigger_random_event
 
@@ -36,11 +36,8 @@ def get_state(request):
         display_message = INTRO_MESSAGE
     else:
         location_name = response_data.get('current_location', 'UNKNOWN')
-        display_message = (
-            "// SECURE SESSION RESTORED...\n"
-            f"// RESUMING AT STOP {game.current_location_id}: {location_name.upper()}\n\n"
-            "// Awaiting your next command..."
-        )
+        display_message = SESSION_RESTORED_MESSAGE.format(
+            location_name=location_name, stop_number=game.current_location_id)
 
     response_data["message"] = display_message
     return JsonResponse(response_data)
