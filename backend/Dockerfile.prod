@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_ROOT_USER_ACTION=ignore \
     PATH="/home/backend/.local/bin:$PATH" \
-    DJANGO_SETTINGS_MODULE=config.settings \
+    DJANGO_SETTINGS_MODULE=config.settings.production \
     DJANGO_ENV=production
 
 # Create user and group with explicit IDs for consistency (Homelab IaC)
