@@ -19,7 +19,6 @@ services:
         done &&
         echo 'Database is ready!' &&
         python manage.py migrate --noinput &&
-        python manage.py createcachetable &&
         python manage.py load_islands &&
         python manage.py collectstatic --noinput"
 

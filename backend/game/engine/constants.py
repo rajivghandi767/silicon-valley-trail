@@ -16,6 +16,34 @@ REBOOT_MESSAGE = (
     + INTRO_MESSAGE
 )
 
+SESSION_RESTORED_MESSAGE = (
+    "// SECURE SESSION RESTORED...\n"
+    "// RESUMING AT STOP {stop_number}: {location_name}\n\n"
+    "// Awaiting your next command..."
+)
+
+# --- Action & Turn Messages ---
+ACTION_BASE_MESSAGES = {
+    'rest': "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)",
+    'code': "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)",
+    'mentor': "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
+}
+
+# --- Travel Messages ---
+TRAVEL_MESSAGES = {
+    'ferry_sea_conditions': "> Sea Conditions: {wave_height}m waves.\n\n",
+    'ferry_grounded': "> Result: SMALL CRAFT ADVISORY! Ferries grounded. (-1 Day)",
+    'ferry_success': "> Safely made it to {location_name}. (-$150, -1 Day)",
+
+    'flight_insufficient_miles': "Insufficient Award Miles.",
+    'flight_grounded': "> Result: ATC GROUND STOP! Flights canceled. (-1 Day)",
+    'flight_turbulent': "> Result: Landed in {location_name}, awful flight. (-2000 Miles, -1 Day)",
+    'flight_smooth': "> Result: Smooth flight to {location_name}. (-2000 Miles, -1 Day)",
+
+    'error_no_location': "No next location found.",
+    'error_invalid_action': "Invalid action sequence requested."
+}
+
 VICTORY_MESSAGE = (
     "🏆 VICTORY: YOU SURVIVED THE TRAIL!\n"
     "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your apprenticeship awaits.\n\n"
@@ -31,19 +59,6 @@ VICTORY_MESSAGE = (
 STATUS_WON = "MISSION ACCOMPLISHED. Secure connection closed."
 STATUS_LOST = "SYSTEM FAILURE. Secure connection closed."
 STATUS_ACTIVE = "Currently in {location_name} with ${cash} cash, {award_miles} miles, {morale}% morale, {bugs} bugs, and {days_remaining} days remaining."
-
-SESSION_RESTORED_MESSAGE = (
-    "// SECURE SESSION RESTORED...\n"
-    "// RESUMING AT STOP {stop_number}: {location_name}\n\n"
-    "// Awaiting your next command..."
-)
-
-# --- Action & Turn Messages ---
-ACTION_BASE_MESSAGES = {
-    'rest': "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)",
-    'code': "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)",
-    'mentor': "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
-}
 
 # Dictionary mapping failure conditions to their UI messages
 DEFEAT_MESSAGES = {
