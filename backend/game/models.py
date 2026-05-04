@@ -22,3 +22,19 @@ class Location(models.Model):
 
     def __str__(self):
         return f"{self.sequence_in_journey} - {self.name}"
+
+
+class ReportedIssue(models.Model):
+    ISSUE_TYPES = [
+        ('game_logic', 'Game Logic / Math Error'),
+        ('ui_bug', 'UI / Display Glitch'),
+        ('typo', 'Typo / Spelling Error'),
+        ('other', 'Other Exception'),
+    ]
+    issue_type = models.CharField(max_length=50, choices=ISSUE_TYPES)
+    user_note = models.TextField()
+    resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.get_issue_type_display()}] - {'Resolved' if self.resolved else 'Pending'}"

@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from .models import ReportedIssue
+
 from .engine.constants import INTRO_MESSAGE, REBOOT_MESSAGE, VICTORY_MESSAGE, SESSION_RESTORED_MESSAGE
 from .engine.state import CacheGameState
 from .engine.actions import process_turn
@@ -92,3 +94,16 @@ def restart_game(request):
     response_data = new_game.serialize_for_api()
     response_data["message"] = REBOOT_MESSAGE
     return JsonResponse(response_data, status=200)
+
+
+@require_http_methods(["POST"])
+def submit_report(request):
+    try:
+        data = json.loads(request.body)
+        ReportedIssue.objects.create(
+            issue_type=data.get("issue_type", "other"),
+            user_note=data.get("user_note", "")
+        )
+        return JsonResponse({"status": "success", "message": "Report saved."})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

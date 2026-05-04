@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "./utils/api";
 import type { GameState } from "./types";
+import { ProjectSwitcher } from "./components/ProjectSwitcher";
+import { ReportModal } from "./components/ReportModal";
 import "./index.css";
 
 function App() {
@@ -11,10 +14,8 @@ function App() {
   );
 
   useEffect(() => {
-    fetch("/api/state/")
-      .then((res) => res.json())
+    apiFetch("/api/state/")
       .then((data) => {
-        if (data.error) throw new Error(data.error);
         setGameState(data);
         if (data.message) setNarrative(data.message);
       })
@@ -32,16 +33,11 @@ function App() {
     setError(null);
 
     try {
-      const res = await fetch("/api/action/", {
+      const data = await apiFetch("/api/action/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: actionType }),
+        body: { action: actionType },
       });
-      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Server error occurred.");
-
-      // The backend dictates EVERYTHING now. We just render what it gives us.
       setGameState(data);
       if (data.message) setNarrative(data.message);
     } catch (err: any) {
@@ -52,7 +48,6 @@ function App() {
   };
 
   const handleRestart = async (force = false) => {
-    // If it's not a forced auto-start, ask the user for confirmation
     if (
       !force &&
       !window.confirm(
@@ -64,9 +59,7 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/restart/", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to restart");
+      const data = await apiFetch("/api/restart/", { method: "POST" });
 
       setGameState(data);
       if (data.message) setNarrative(data.message);
@@ -126,7 +119,7 @@ function App() {
           </span>
         </div>
 
-        {/* RESOURCE BLOCKS: Dynamic Colors added */}
+        {/* RESOURCE BLOCKS */}
         <div className="stat-block">
           <span className="stat-label">Days Remaining</span>
           <span
@@ -225,9 +218,12 @@ function App() {
           <h1 className="title">
             &lt; Silicon Valley Trail: Caribbean Edition /&gt;
           </h1>
-          <button onClick={() => handleRestart()} className="restart-btn">
-            [ Restart Game ]
-          </button>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <button onClick={() => handleRestart()} className="restart-btn">
+              [ Restart Game ]
+            </button>
+            <ProjectSwitcher />
+          </div>
         </div>
 
         <div className="game-content">
@@ -239,7 +235,6 @@ function App() {
                 // ERROR: {error}
               </div>
             )}
-            {/* All Victory/Loss/Weather text is now natively embedded in the narrative variable by Django */}
             {narrative}
           </div>
 
@@ -301,6 +296,7 @@ function App() {
           </span>
         </div>
       </div>
+      <ReportModal />
     </div>
   );
 }
