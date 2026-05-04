@@ -12,3 +12,8 @@ export interface GameState {
     is_lost: boolean;
     status_summary: string;
 }
+
+export interface BugReport {
+    issue_type: 'game_logic' | 'ui_bug' | 'typo' | 'other';
+    user_note: string;
+}

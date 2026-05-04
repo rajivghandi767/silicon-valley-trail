@@ -9,6 +9,27 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    // 1. Force Vite to use the 'localhost' string
+    host: 'localhost', 
+    port: 5173,
+    proxy: {
+      // 2. Proxy all /api and /admin requests to Django
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/admin': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/static': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      }
+    }
+  },
   build: {
     sourcemap: true,
     rollupOptions: {

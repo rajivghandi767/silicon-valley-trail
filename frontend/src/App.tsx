@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "./utils/api";
-import type { GameState } from "./types";
+import { GameState } from "./types";
 import { ProjectSwitcher } from "./components/ProjectSwitcher";
 import { ReportModal } from "./components/ReportModal";
 import "./index.css";
@@ -13,15 +13,17 @@ function App() {
     "// Establishing secure connection...",
   );
 
+  // Initial load: Fetch game state or trigger auto-restart if no game exists
   useEffect(() => {
-    apiFetch("/api/state/")
+    apiFetch<GameState>("/api/state/")
       .then((data) => {
         setGameState(data);
         if (data.message) setNarrative(data.message);
       })
-      .catch((err) => {
+      .catch((err: Error) => {
+        // If 404 is returned, it means no active game session exists in the cache
         if (err.message.includes("No active game found")) {
-          handleRestart(true); // Auto-start the game silently!
+          handleRestart(true);
         } else {
           setError(err.message);
         }
@@ -33,7 +35,7 @@ function App() {
     setError(null);
 
     try {
-      const data = await apiFetch("/api/action/", {
+      const data = await apiFetch<GameState>("/api/action/", {
         method: "POST",
         body: { action: actionType },
       });
@@ -59,7 +61,9 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiFetch("/api/restart/", { method: "POST" });
+      const data = await apiFetch<GameState>("/api/restart/", {
+        method: "POST",
+      });
 
       setGameState(data);
       if (data.message) setNarrative(data.message);
@@ -71,16 +75,19 @@ function App() {
   };
 
   if (error && !gameState)
-    return <div style={{ color: "red", padding: "2rem" }}>Error: {error}</div>;
+    return (
+      <div style={{ color: "var(--accent-red)", padding: "2rem" }}>
+        Error: {error}
+      </div>
+    );
   if (!gameState) return <div style={{ padding: "2rem" }}>Loading IDE...</div>;
 
   const isGameOver = gameState.is_won || gameState.is_lost;
 
   return (
     <div className="app-container">
-      {/* LEFT SIDEBAR: Player Stats */}
+      {/* Sidebar: Stat tracking and location info */}
       <div className="sidebar">
-        {/* LOCATION BLOCK: Stacked Vertically */}
         <div
           style={{
             display: "flex",
@@ -90,7 +97,6 @@ function App() {
             borderBottom: "1px dashed var(--border-color)",
           }}
         >
-          {/* Split Location and Stop into two distinct lines */}
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <span className="stat-label">Location</span>
             <span
@@ -119,7 +125,6 @@ function App() {
           </span>
         </div>
 
-        {/* RESOURCE BLOCKS */}
         <div className="stat-block">
           <span className="stat-label">Days Remaining</span>
           <span
@@ -184,7 +189,6 @@ function App() {
           <span className="stat-label">Bugs</span>
           <span
             className="stat-value"
-            /* Warning orange at 30, Critical red at 40, Max 50 */
             style={{
               color:
                 gameState.bugs >= 40
@@ -197,10 +201,10 @@ function App() {
             {gameState.bugs} / 50
           </span>
         </div>
+
         <div
           style={{
-            marginTop:
-              "auto" /* Pushes this block to the absolute bottom of the sidebar */,
+            marginTop: "auto",
             paddingTop: "1.5rem",
             borderTop: "1px dashed var(--border-color)",
             fontSize: "0.85rem",
