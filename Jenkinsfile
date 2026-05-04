@@ -4,6 +4,7 @@ pipeline {
     agent any
 
     environment {
+        DOCKER_BUILDKIT = '1'
         APP_NAME         = "Silicon Valley Trail"
         PROJECT_NAME     = "svt" 
         REGISTRY         = "ghcr.io"
