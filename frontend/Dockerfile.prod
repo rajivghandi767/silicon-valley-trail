@@ -11,18 +11,16 @@ USER frontend
 
 # Copy package files and install dependencies
 COPY --chown=frontend:frontend_group package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY --chown=frontend:frontend_group . .
 
 # Build arguments for environment variables
 ARG NODE_ENV=production
-ARG VITE_API_URL
 
 # Set environment variables for build process
 ENV NODE_ENV=$NODE_ENV
-ENV VITE_API_URL=$VITE_API_URL
 
 # Build the application and clean up non-distribution files
 RUN npm run build && \
