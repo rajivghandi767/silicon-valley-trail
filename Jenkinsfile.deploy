@@ -20,7 +20,7 @@ pipeline {
         
         DEPLOY_USER = "dietpi"
         DEPLOY_HOST = "10.100.10.5"
-        DEPLOY_DIR  = "/opt/homelab-iac/services/apps/silicon-valley-trail"
+        DEPLOY_DIR  = "/opt/homelab-iac/services/apps/svt"
 
         IMAGE_BACKEND  = "rajivghandi767/svt-backend"
         IMAGE_FRONTEND = "rajivghandi767/svt-frontend"
@@ -50,6 +50,7 @@ pipeline {
                     [envVar: 'POSTGRES_USER', vaultKey: 'POSTGRES_USER'],
                     [envVar: 'POSTGRES_PASSWORD', vaultKey: 'POSTGRES_PASSWORD'],
                     [envVar: 'POSTGRES_DB', vaultKey: 'POSTGRES_DB'],
+                    [envVar: 'REDIS_URL', vaultKey: 'REDIS_URL'],
                     [envVar: 'ADMIN_URL', vaultKey: 'ADMIN_URL'],
                     [envVar: 'DISCORD_WEBHOOK_URL', vaultKey: 'DISCORD_WEBHOOK_URL'],
                 ]]]) {
@@ -67,6 +68,7 @@ pipeline {
                                 echo "POSTGRES_USER='${POSTGRES_USER}'" >> .env.prod
                                 echo "POSTGRES_PASSWORD='${POSTGRES_PASSWORD}'" >> .env.prod
                                 echo "POSTGRES_DB='${POSTGRES_DB}'" >> .env.prod
+                                echo "REDIS_URL='${REDIS_URL}'" >> .env.prod
                                 echo "ADMIN_URL='${ADMIN_URL}'" >> .env.prod
                                 echo "DISCORD_WEBHOOK_URL='${DISCORD_WEBHOOK_URL}'" >> .env.prod
                             '''
