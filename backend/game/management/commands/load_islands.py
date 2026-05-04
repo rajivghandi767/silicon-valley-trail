@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from game.models import GameState, Location
+from game.models import Location
 
 
 class Command(BaseCommand):
@@ -9,7 +9,6 @@ class Command(BaseCommand):
         # Clear existing data.
         # Order here is deliberate since in models.py we set on_delete=models.PROTECT.
         # As such, deleting GameState first allows us to clear the game state without violating the foreign key constraint on Location.
-        GameState.objects.all().delete()
         Location.objects.all().delete()
 
         # Create island data for the 10 stops along the journey. This could have been AI generated or API fetched, but I opted to write it myself to share interesting facts about the stops chosen and make the experience more personal and engaging.
