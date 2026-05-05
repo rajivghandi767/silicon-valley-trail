@@ -11,6 +11,7 @@ export interface GameState {
     is_won: boolean;
     is_lost: boolean;
     status_summary: string;
+    message?: string;
 }
 
 export interface BugReport {
