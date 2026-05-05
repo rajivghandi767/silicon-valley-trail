@@ -13,7 +13,6 @@ function App() {
     "// Establishing secure connection...",
   );
 
-  // Initial load: Fetch game state or trigger auto-restart if no game exists
   useEffect(() => {
     apiFetch<GameState>("/api/state/")
       .then((data) => {
@@ -21,7 +20,6 @@ function App() {
         if (data.message) setNarrative(data.message);
       })
       .catch((err: Error) => {
-        // If 404 is returned, it means no active game session exists in the cache
         if (err.message.includes("No active game found")) {
           handleRestart(true);
         } else {
@@ -86,7 +84,6 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Sidebar: Stat tracking and location info */}
       <div className="sidebar">
         <div
           style={{
@@ -126,7 +123,12 @@ function App() {
         </div>
 
         <div className="stat-block">
-          <span className="stat-label">Days Remaining</span>
+          <span className="stat-label">
+            <span className="hide-on-mobile">Days Remaining</span>
+            <span className="show-on-mobile" title="Days Remaining">
+              📅
+            </span>
+          </span>
           <span
             className="stat-value"
             style={{
@@ -141,7 +143,12 @@ function App() {
         </div>
 
         <div className="stat-block">
-          <span className="stat-label">Cash</span>
+          <span className="stat-label">
+            <span className="hide-on-mobile">Cash</span>
+            <span className="show-on-mobile" title="Cash">
+              💰
+            </span>
+          </span>
           <span
             className="stat-value"
             style={{
@@ -156,7 +163,12 @@ function App() {
         </div>
 
         <div className="stat-block">
-          <span className="stat-label">Award Miles</span>
+          <span className="stat-label">
+            <span className="hide-on-mobile">Award Miles</span>
+            <span className="show-on-mobile" title="Award Miles">
+              ✈️
+            </span>
+          </span>
           <span
             className="stat-value"
             style={{
@@ -171,7 +183,12 @@ function App() {
         </div>
 
         <div className="stat-block">
-          <span className="stat-label">Morale</span>
+          <span className="stat-label">
+            <span className="hide-on-mobile">Morale</span>
+            <span className="show-on-mobile" title="Morale">
+              🎭
+            </span>
+          </span>
           <span
             className="stat-value"
             style={{
@@ -186,7 +203,12 @@ function App() {
         </div>
 
         <div className="stat-block">
-          <span className="stat-label">Bugs</span>
+          <span className="stat-label">
+            <span className="hide-on-mobile">Bugs</span>
+            <span className="show-on-mobile" title="Bugs">
+              🐛
+            </span>
+          </span>
           <span
             className="stat-value"
             style={{
@@ -220,11 +242,19 @@ function App() {
       <div className="main-window">
         <div className="header">
           <h1 className="title">
-            &lt; Silicon Valley Trail: Caribbean Edition /&gt;
+            <span className="hide-on-mobile">
+              &lt; Silicon Valley Trail: Caribbean Edition /&gt;
+            </span>
+            <span className="show-on-mobile">&lt; SVT: Caribbean /&gt;</span>
           </h1>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-            <button onClick={() => handleRestart()} className="restart-btn">
-              [ Restart Game ]
+          <div className="header-controls">
+            <button
+              onClick={() => handleRestart()}
+              className="restart-btn"
+              title="Restart Game"
+            >
+              <span className="hide-on-mobile">[ Restart Game ]</span>
+              <span className="show-on-mobile">⏮️</span>
             </button>
             <ProjectSwitcher />
           </div>
@@ -248,35 +278,50 @@ function App() {
               onClick={() => handleAction("code")}
               disabled={isLoading || isGameOver}
             >
-              [ Write Code ]
+              <span className="hide-on-mobile">[ Write Code ]</span>
+              <span className="show-on-mobile" title="Write Code">
+                💻
+              </span>
             </button>
             <button
               className="action-btn"
               onClick={() => handleAction("mentor")}
               disabled={isLoading || isGameOver}
             >
-              [ Mentor ]
+              <span className="hide-on-mobile">[ Mentor ]</span>
+              <span className="show-on-mobile" title="Mentor">
+                🤝
+              </span>
             </button>
             <button
               className="action-btn"
               onClick={() => handleAction("rest")}
               disabled={isLoading || isGameOver}
             >
-              [ Rest ]
+              <span className="hide-on-mobile">[ Rest ]</span>
+              <span className="show-on-mobile" title="Rest">
+                🛌
+              </span>
             </button>
             <button
               className="action-btn fly"
               onClick={() => handleAction("travel_ferry")}
               disabled={isLoading || isGameOver}
             >
-              [ Ferry ]
+              <span className="hide-on-mobile">[ Ferry ]</span>
+              <span className="show-on-mobile" title="Ferry">
+                ⛴️
+              </span>
             </button>
             <button
               className="action-btn fly"
               onClick={() => handleAction("travel_flight")}
               disabled={isLoading || isGameOver}
             >
-              [ Fly ]
+              <span className="hide-on-mobile">[ Fly ]</span>
+              <span className="show-on-mobile" title="Fly">
+                ✈️
+              </span>
             </button>
           </div>
         </div>
@@ -287,16 +332,18 @@ function App() {
             Developed by{" "}
             <a href="https://rajivwallace.com" target="_blank" rel="noreferrer">
               Rajiv Wallace 🇩🇲
-            </a>{" "}
-            |
+            </a>
+          </span>
+          <span className="footer-links">
             <a
               href="https://github.com/rajivghandi767"
               target="_blank"
               rel="noreferrer"
-              style={{ marginLeft: "8px" }}
             >
               GitHub
             </a>
+            <span style={{ margin: "0 0.5rem" }}>|</span>
+            <a href="mailto:dev@rajivwallace.com">dev@rajivwallace.com</a>
           </span>
         </div>
       </div>
