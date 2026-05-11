@@ -303,6 +303,10 @@ function App() {
                 🛌
               </span>
             </button>
+
+            {/* SEPARATOR ADDED HERE */}
+            <div className="action-separator"></div>
+
             <button
               className="action-btn fly"
               onClick={() => handleAction("travel_ferry")}
