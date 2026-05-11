@@ -6,6 +6,13 @@ class Location(models.Model):
     Represents a location (island/stop) in the game. Each location has a name, description, and its order in the journey.
     """
 
+    STAT_CHOICES = [
+        ('morale', 'Morale'),
+        ('cash', 'Cash'),
+        ('award_miles', 'Award Miles'),
+        ('bugs', 'Bugs (Reduction)'),
+    ]
+
     name = models.CharField(
         max_length=255, help_text="The name of the island/stop along the journey.")
     description = models.TextField(
@@ -16,6 +23,23 @@ class Location(models.Model):
     # Location coordinates used for OpenMeteo Weather and Marine APIs for retrieving real-time weather and sea conditions to influence game events and challenges at each stop.
     latitude = models.FloatField(default=0.0)
     longitude = models.FloatField(default=0.0)
+
+    reward_stat = models.CharField(
+        max_length=50,
+        choices=STAT_CHOICES,
+        blank=True,
+        null=True,
+        help_text="The player stat modified upon arrival."
+    )
+    reward_amount = models.IntegerField(
+        default=0,
+        help_text="The mathematical impact. (Use negatives for bugs)."
+    )
+    reward_message = models.TextField(
+        blank=True,
+        null=True,
+        help_text="The narrative text displayed upon successful arrival."
+    )
 
     class Meta:
         ordering = ['sequence_in_journey']
