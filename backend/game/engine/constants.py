@@ -22,11 +22,52 @@ SESSION_RESTORED_MESSAGE = (
     "// Awaiting your next command..."
 )
 
+# --- Initial Game State ---
+INITIAL_STATE = {
+    "cash": 2500,
+    "award_miles": 8000,
+    "morale": 100,
+    "bugs": 0,
+    "days_remaining": 18
+}
+TOTAL_JOURNEY_STOPS = 10
+MAX_ALLOWED_BUGS = 50
+MAX_MORALE = 100
+
+# --- Game Weather Constants ---
+API_TIMEOUT_SECONDS = 3
+
+# Marine
+SMALL_CRAFT_WAVE_HEIGHT_M = 1.5
+BASE_ROUGH_SEAS_PROB = 0.20
+
+# Aviation
+WMO_THUNDERSTORM_MIN_CODE = 61
+TURBULENCE_WIND_SPEED_KMH = 25.0
+BASE_THUNDERSTORM_PROB = 0.20
+BASE_TURBULENCE_PROB = 0.50
+
 # --- Action & Turn Messages ---
 ACTION_BASE_MESSAGES = {
     'rest': "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)",
     'code': "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)",
     'mentor': "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
+}
+
+# --- Action Impacts on Player State ---
+STATIONARY_ACTION_IMPACTS = {
+    'rest': {'morale': 40, 'cash': -100, 'days': -1},
+    'code': {'bugs': -10, 'morale': -20, 'days': -1},
+    'mentor': {'bugs': -10, 'morale': 20, 'days': -1},
+}
+
+TRAVEL_IMPACTS = {
+    'ferry_success': {'cash': -150, 'morale': -10, 'days': -1},
+    'ferry_grounded': {'morale': -20, 'days': -1},
+    'flight_cost': {'award_miles': -2000, 'days': -1},
+    'flight_smooth_morale': 10,
+    'flight_turbulent_morale': -15,
+    'flight_grounded_morale': -15,
 }
 
 # --- Travel Messages ---
