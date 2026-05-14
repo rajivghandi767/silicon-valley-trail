@@ -1,4 +1,5 @@
-# backend/game/engine/constants.py
+from enum import StrEnum
+from typing import Dict, Any, List, Set
 
 """
 Game Engine Constants & Configuration
@@ -7,11 +8,30 @@ from the core Python logic to ensure a highly scalable, data-driven architecture
 """
 
 # ============================================================================
-# 1. CORE ENGINE MECHANICS & ECONOMY
+# 1. CORE ENGINE MECHANICS, ACTIONS & ECONOMY
 # ============================================================================
 
+
+class GameAction(StrEnum):
+    """Strict enumeration of all valid player actions."""
+    # Stationary
+    REST = 'rest'
+    CODE = 'code'
+    MENTOR = 'mentor'
+
+    # Travel
+    FERRY = 'travel_ferry'
+    FLIGHT = 'travel_flight'
+
+
+# Using sets for O(1) constant time membership checking
+STATIONARY_ACTIONS: Set[GameAction] = {
+    GameAction.REST, GameAction.CODE, GameAction.MENTOR}
+TRAVEL_ACTIONS: Set[GameAction] = {GameAction.FERRY, GameAction.FLIGHT}
+ALL_VALID_ACTIONS: Set[GameAction] = STATIONARY_ACTIONS | TRAVEL_ACTIONS
+
 # --- Initial Game State & Bounds ---
-INITIAL_STATE = {
+INITIAL_STATE: Dict[str, int] = {
     "cash": 2500,
     "award_miles": 8000,
     "morale": 100,
@@ -19,31 +39,31 @@ INITIAL_STATE = {
     "days_remaining": 18
 }
 
-TOTAL_JOURNEY_STOPS = 10
-MAX_ALLOWED_BUGS = 50
-MAX_MORALE = 100
+TOTAL_JOURNEY_STOPS: int = 10
+MAX_ALLOWED_BUGS: int = 50
+MAX_MORALE: int = 100
 
 # --- Game Weather API Constants ---
-API_TIMEOUT_SECONDS = 3
+API_TIMEOUT_SECONDS: int = 3
 
 # Marine Conditions
-SMALL_CRAFT_WAVE_HEIGHT_M = 1.5
-BASE_ROUGH_SEAS_PROB = 0.20
+SMALL_CRAFT_WAVE_HEIGHT_M: float = 1.5
+BASE_ROUGH_SEAS_PROB: float = 0.20
 
 # Aviation Conditions
-WMO_THUNDERSTORM_MIN_CODE = 61
-TURBULENCE_WIND_SPEED_KMH = 25.0
-BASE_THUNDERSTORM_PROB = 0.20
-BASE_TURBULENCE_PROB = 0.50
+WMO_THUNDERSTORM_MIN_CODE: int = 61
+TURBULENCE_WIND_SPEED_KMH: float = 25.0
+BASE_THUNDERSTORM_PROB: float = 0.20
+BASE_TURBULENCE_PROB: float = 0.50
 
 # --- Action Impacts on Player State ---
-STATIONARY_ACTION_IMPACTS = {
-    'rest': {'morale': 40, 'cash': -100, 'days_remaining': -1},
-    'code': {'bugs': -10, 'morale': -20, 'days_remaining': -1},
-    'mentor': {'bugs': -10, 'morale': 20, 'days_remaining': -1},
+STATIONARY_ACTION_IMPACTS: Dict[GameAction, Dict[str, int]] = {
+    GameAction.REST: {'morale': 40, 'cash': -100, 'days_remaining': -1},
+    GameAction.CODE: {'bugs': -10, 'morale': -20, 'days_remaining': -1},
+    GameAction.MENTOR: {'bugs': -10, 'morale': 20, 'days_remaining': -1},
 }
 
-TRAVEL_IMPACTS = {
+TRAVEL_IMPACTS: Dict[str, Any] = {
     'flight_cost_threshold': 2000,
     'ferry_success': {'cash': -150, 'morale': -10, 'days_remaining': -1},
     'ferry_grounded': {'morale': -20, 'days_remaining': -1},
@@ -54,8 +74,7 @@ TRAVEL_IMPACTS = {
 }
 
 # --- Data-Driven Random Events ---
-# Dynamically weighted in events.py based on player morale (Feedback Loop)
-RANDOM_EVENTS = [
+RANDOM_EVENTS: List[Dict[str, Any]] = [
     {
         "id": 1, "type": "negative", "base_weight": 10,
         "text": "A silent React dependency update broke your staging environment! (+20 Bugs)",
@@ -123,7 +142,7 @@ RANDOM_EVENTS = [
 # 2. NARRATIVE & STORY STRINGS
 # ============================================================================
 
-INTRO_MESSAGE = (
+INTRO_MESSAGE: str = (
     "Traditional application portals are a black hole. As a self-taught developer from New York, you need a different strategy to land your dream Backend Apprenticeship.\n\n"
     "Word on the wire is that Shalini Agarwal, Senior Director of Engineering at LinkedIn and head of the REACH program, is taking a rare, unplugged vacation to attend the Nature Island Hiking Festival in Dominica 🇩🇲.\n\n"
     "You have 18 Days, your laptop, a little bit of cash, and a stash of airline award miles.\n\n"
@@ -132,20 +151,20 @@ INTRO_MESSAGE = (
     "// THE JOURNEY BEGINS IN NEW YORK CITY 🇺🇸. TO GET STARTED, CHOOSE AN ACTION BELOW ..."
 )
 
-REBOOT_MESSAGE = (
+REBOOT_MESSAGE: str = (
     "// GAME RESTART SEQUENCE INITIATED...\n"
     "// MEMORY CLEARED. SECURE BACKEND API CONNECTION RE-ESTABLISHED.\n\n"
     "> SHALINI (LinkedIn REACH): Rough run, but failure is just data. Let's try this again.\n\n"
     + INTRO_MESSAGE
 )
 
-SESSION_RESTORED_MESSAGE = (
+SESSION_RESTORED_MESSAGE: str = (
     "// SECURE SESSION RESTORED...\n"
     "// RESUMING AT STOP {stop_number}: {location_name}\n\n"
     "// Awaiting your next command..."
 )
 
-VICTORY_MESSAGE = (
+VICTORY_MESSAGE: str = (
     "🏆 VICTORY: YOU SURVIVED THE TRAIL!\n"
     "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your apprenticeship awaits.\n\n"
     "> [ FINAL STATS ]\n"
@@ -157,13 +176,13 @@ VICTORY_MESSAGE = (
 )
 
 # --- Turn-by-Turn Narrative Logs ---
-ACTION_BASE_MESSAGES = {
-    'rest': "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)",
-    'code': "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)",
-    'mentor': "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
+ACTION_BASE_MESSAGES: Dict[GameAction, str] = {
+    GameAction.REST: "> You took a day off to hit the beach and recharge.\n\n> Result:\n  - Wallet depleted (-$100)\n  - Time elapsed (-1 Day)",
+    GameAction.CODE: "> You locked yourself in the hotel room and crushed some technical debt. (-1 Day)",
+    GameAction.MENTOR: "> You hosted a meetup for local devs. Teaching others helped you spot errors in your own code! (-1 Day)"
 }
 
-TRAVEL_MESSAGES = {
+TRAVEL_MESSAGES: Dict[str, str] = {
     'ferry_sea_conditions': "> Sea Conditions: {wave_height}m waves.\n\n",
     'ferry_grounded': "> Result: SMALL CRAFT ADVISORY! Ferries grounded. (-1 Day)",
     'ferry_success': "> Safely made it to {location_name}. (-$150, -1 Day)",
@@ -177,16 +196,15 @@ TRAVEL_MESSAGES = {
     'error_invalid_action': "Invalid action sequence requested."
 }
 
-
 # ============================================================================
 # 3. UI & STATUS MESSAGES
 # ============================================================================
 
-STATUS_WON = "MISSION ACCOMPLISHED. Secure connection closed."
-STATUS_LOST = "SYSTEM FAILURE. Secure connection closed."
-STATUS_ACTIVE = "Currently in {location_name} with ${cash} cash, {award_miles} miles, {morale}% morale, {bugs} bugs, and {days_remaining} days remaining."
+STATUS_WON: str = "MISSION ACCOMPLISHED. Secure connection closed."
+STATUS_LOST: str = "SYSTEM FAILURE. Secure connection closed."
+STATUS_ACTIVE: str = "Currently in {location_name} with ${cash} cash, {award_miles} miles, {morale}% morale, {bugs} bugs, and {days_remaining} days remaining."
 
-DEFEAT_MESSAGES = {
+DEFEAT_MESSAGES: Dict[str, str] = {
     "time": "💀 FATAL EXCEPTION: You ran out of days or it is mathematically impossible to reach Dominica in time.",
     "bankrupt": "💀 FATAL EXCEPTION: You went bankrupt and ran out of miles. You are stranded in the Caribbean.",
     "bugs": "💀 FATAL EXCEPTION: Your MVP crashed during the pitch. The codebase was overwhelmed with 50+ bugs.",

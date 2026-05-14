@@ -1,31 +1,37 @@
-# backend/game/views.py
 import json
 from django.core.cache import cache
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import ReportedIssue
-
 from .engine.constants import INTRO_MESSAGE, REBOOT_MESSAGE, VICTORY_MESSAGE, SESSION_RESTORED_MESSAGE
 from .engine.state import CacheGameState
 from .engine.actions import process_turn
 
 
-def get_session_cache_key(request):
+def get_session_cache_key(request: HttpRequest) -> str:
+    """Retrieves or provisions a tracking key tied to the Django session."""
     if not request.session.session_key:
         request.session.create()
+        request.session['initialized'] = True
     return f"svt_game_{request.session.session_key}"
 
 
 @ensure_csrf_cookie
 @require_http_methods(["GET"])
-def get_state(request):
+def get_state(request: HttpRequest) -> JsonResponse:
     cache_key = get_session_cache_key(request)
     game = cache.get(cache_key)
 
+    # Auto-initialize a new game if one isn't found instead of throwing a 404
     if not game:
-        return JsonResponse({"error": "No active game found. Start a new game."}, status=404)
+        game = CacheGameState(current_location_id=1)
+        cache.set(cache_key, game, timeout=86400)
+
+        response_data = game.serialize_for_api()
+        response_data["message"] = INTRO_MESSAGE
+        return JsonResponse(response_data)
 
     response_data = game.serialize_for_api()
 
@@ -33,8 +39,6 @@ def get_state(request):
         display_message = VICTORY_MESSAGE.format(
             days=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs
         )
-    elif game.current_location_id == 1 and game.days_remaining == 18:
-        display_message = INTRO_MESSAGE
     else:
         location_name = response_data.get('current_location', 'UNKNOWN')
         display_message = SESSION_RESTORED_MESSAGE.format(
@@ -45,23 +49,23 @@ def get_state(request):
 
 
 @require_http_methods(["POST"])
-def take_action(request):
+def take_action(request: HttpRequest) -> JsonResponse:
     cache_key = get_session_cache_key(request)
     game = cache.get(cache_key)
 
     if not game:
-        return JsonResponse({"error": "No active game found."}, status=404)
+        return JsonResponse({"error": "Your session has expired. Please refresh the page to start a new game."}, status=404)
+
     if game.is_lost or game.is_won:
         return JsonResponse({"error": "The game has ended. Please restart."}, status=400)
 
     try:
         data = json.loads(request.body)
-        action = data.get("action")
+        raw_action = data.get("action", "")
 
         # Delegate game logic to the engine
-        turn_message, error = process_turn(game, action)
+        turn_message, error = process_turn(game, raw_action)
 
-        # Handle potential errors (like insufficient miles)
         if error:
             return JsonResponse({"error": error}, status=400)
 
@@ -69,7 +73,6 @@ def take_action(request):
         game.apply_boundaries()
         cache.set(cache_key, game, timeout=86400)
 
-        # Format UI messages
         if game.is_won:
             turn_message = VICTORY_MESSAGE.format(
                 days=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs)
@@ -85,7 +88,7 @@ def take_action(request):
 
 
 @require_http_methods(["POST"])
-def restart_game(request):
+def restart_game(request: HttpRequest) -> JsonResponse:
     cache_key = get_session_cache_key(request)
 
     new_game = CacheGameState(current_location_id=1)
@@ -97,7 +100,7 @@ def restart_game(request):
 
 
 @require_http_methods(["POST"])
-def submit_report(request):
+def submit_report(request: HttpRequest) -> JsonResponse:
     try:
         data = json.loads(request.body)
         ReportedIssue.objects.create(

@@ -1,26 +1,25 @@
 import random
+from typing import Any, List
 from .constants import RANDOM_EVENTS
 
 
-def trigger_random_event(game, location_name):
+def trigger_random_event(game: Any, location_name: str) -> str:
     """
-    Selects a dynamically weighted random event and applies its impacts to the game state.
+    Selects a dynamically weighted random event and applies its impacts.
     """
-    # 1. Adjust weights dynamically based on player morale (Feedback Loop)
-    calculated_weights = []
+    calculated_weights: List[int] = []
+
     for event in RANDOM_EVENTS:
-        weight = event["base_weight"]
+        weight: int = event["base_weight"]
         if game.morale < 30 and event["type"] == "negative":
-            weight += 25  # Death spiral: Low morale makes bad things more likely
+            weight += 25
         elif game.morale >= 80 and event["type"] == "positive":
-            weight += 10  # Momentum: High morale makes good things more likely
+            weight += 10
         calculated_weights.append(weight)
 
-    # 2. Roll the loaded dice using Binary Search on Prefix Sums
     selected_event = random.choices(
         RANDOM_EVENTS, weights=calculated_weights, k=1)[0]
 
-    # 3. Apply the impacts dynamically
     for stat, change_value in selected_event.get("impacts", {}).items():
         if hasattr(game, stat):
             current_value = getattr(game, stat)

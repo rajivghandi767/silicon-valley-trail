@@ -1,12 +1,9 @@
+# backend/game/models.py
 from django.db import models
 
 
 class Location(models.Model):
-    """
-    Represents a location (island/stop) in the game. Each location has a name, description, and its order in the journey.
-    """
-
-    STAT_CHOICES = [
+    RESOURCE_CHOICES = [
         ('morale', 'Morale'),
         ('cash', 'Cash'),
         ('award_miles', 'Award Miles'),
@@ -17,34 +14,21 @@ class Location(models.Model):
         max_length=255, help_text="The name of the island/stop along the journey.")
     description = models.TextField(
         help_text="A brief description/fun fact about the island/stop.")
-    sequence_in_journey = models.IntegerField(unique=True,
-                                              help_text="The order of the stop along the journey. (Eg. 1=New York (First Stop), 10=Dominica (10th & Last Stop))")
+    sequence_in_journey = models.IntegerField(
+        unique=True, help_text="Order of the stop (1=NYC, 10=Dominica)")
 
-    # Location coordinates used for OpenMeteo Weather and Marine APIs for retrieving real-time weather and sea conditions to influence game events and challenges at each stop.
     latitude = models.FloatField(default=0.0)
     longitude = models.FloatField(default=0.0)
 
-    reward_stat = models.CharField(
-        max_length=50,
-        choices=STAT_CHOICES,
-        blank=True,
-        null=True,
-        help_text="The player stat modified upon arrival."
-    )
-    reward_amount = models.IntegerField(
-        default=0,
-        help_text="The mathematical impact. (Use negatives for bugs)."
-    )
-    reward_message = models.TextField(
-        blank=True,
-        null=True,
-        help_text="The narrative text displayed upon successful arrival."
-    )
+    reward_resource = models.CharField(
+        max_length=50, choices=RESOURCE_CHOICES, blank=True, null=True)
+    reward_amount = models.IntegerField(default=0)
+    reward_message = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ['sequence_in_journey']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.sequence_in_journey} - {self.name}"
 
 
@@ -60,5 +44,7 @@ class ReportedIssue(models.Model):
     resolved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"[{self.get_issue_type_display()}] - {'Resolved' if self.resolved else 'Pending'}"
+    def __str__(self) -> str:
+        issue_display = dict(self.ISSUE_TYPES).get(
+            self.issue_type, self.issue_type)
+        return f"[{issue_display}] - {'Resolved' if self.resolved else 'Pending'}"
