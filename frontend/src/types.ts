@@ -1,5 +1,11 @@
+export type GameAction = 
+    | 'rest' 
+    | 'code' 
+    | 'mentor' 
+    | 'travel_ferry' 
+    | 'travel_flight';
+
 export interface GameState {
-    id: number;
     current_location: string;
     description: string;
     sequence_in_journey: number;

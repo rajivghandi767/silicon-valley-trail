@@ -1,8 +1,10 @@
+// frontend/src/App.tsx
 import { useState, useEffect } from "react";
 import { apiFetch } from "./utils/api";
-import { GameState } from "./types";
+import { GameState, GameAction } from "./types";
 import { ProjectSwitcher } from "./components/ProjectSwitcher";
 import { ReportModal } from "./components/ReportModal";
+import { WARNING_THRESHOLDS } from "./constants";
 import "./index.css";
 
 function App() {
@@ -20,15 +22,11 @@ function App() {
         if (data.message) setNarrative(data.message);
       })
       .catch((err: Error) => {
-        if (err.message.includes("No active game found")) {
-          handleRestart(true);
-        } else {
-          setError(err.message);
-        }
+        setError(err.message);
       });
   }, []);
 
-  const handleAction = async (actionType: string) => {
+  const handleAction = async (actionType: GameAction) => {
     setIsLoading(true);
     setError(null);
 
@@ -40,8 +38,8 @@ function App() {
 
       setGameState(data);
       if (data.message) setNarrative(data.message);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -65,8 +63,8 @@ function App() {
 
       setGameState(data);
       if (data.message) setNarrative(data.message);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +131,7 @@ function App() {
             className="stat-value"
             style={{
               color:
-                gameState.days_remaining <= 3
+                gameState.days_remaining <= WARNING_THRESHOLDS.DAYS
                   ? "var(--accent-red)"
                   : "var(--accent-green)",
             }}
@@ -153,7 +151,7 @@ function App() {
             className="stat-value"
             style={{
               color:
-                gameState.cash <= 300
+                gameState.cash <= WARNING_THRESHOLDS.CASH
                   ? "var(--accent-red)"
                   : "var(--accent-green)",
             }}
@@ -173,7 +171,7 @@ function App() {
             className="stat-value"
             style={{
               color:
-                gameState.award_miles < 2000
+                gameState.award_miles < WARNING_THRESHOLDS.MILES
                   ? "var(--text-main)"
                   : "var(--accent-blue)",
             }}
@@ -193,7 +191,7 @@ function App() {
             className="stat-value"
             style={{
               color:
-                gameState.morale <= 30
+                gameState.morale <= WARNING_THRESHOLDS.MORALE
                   ? "var(--accent-red)"
                   : "var(--accent-green)",
             }}
@@ -213,9 +211,9 @@ function App() {
             className="stat-value"
             style={{
               color:
-                gameState.bugs >= 40
+                gameState.bugs >= WARNING_THRESHOLDS.BUGS_CRITICAL
                   ? "var(--accent-red)"
-                  : gameState.bugs >= 30
+                  : gameState.bugs >= WARNING_THRESHOLDS.BUGS_WARNING
                     ? "var(--accent-orange)"
                     : "var(--accent-green)",
             }}
@@ -304,7 +302,6 @@ function App() {
               </span>
             </button>
 
-            {/* SEPARATOR ADDED HERE */}
             <div className="action-separator"></div>
 
             <button

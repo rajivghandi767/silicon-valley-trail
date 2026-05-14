@@ -1,9 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
-/**
- * Utility to extract a cookie value by name.
- * Used primarily for retrieving the Django 'csrftoken'.
- */
 function getCookie(name: string): string {
   let cookieValue = "";
   if (document.cookie && document.cookie !== "") {
@@ -19,28 +15,19 @@ function getCookie(name: string): string {
   return cookieValue;
 }
 
-interface ApiOptions extends RequestInit {
-  body?: any; // Allows passing standard objects which are stringified automatically
+interface ApiOptions extends Omit<RequestInit, 'body'> {
+  body?: Record<string, unknown>; 
 }
 
-/**
- * A generic wrapper around the native fetch API.
- * * @template T - The expected shape of the JSON response.
- * @param endpoint - The API path (e.g., '/api/state/').
- * @param options - Standard fetch options plus an optional object body.
- * @returns A promise resolving to the typed data.
- */
 export async function apiFetch<T>(
   endpoint: string,
   options: ApiOptions = {},
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-
   const headers = new Headers(options.headers || {});
 
-  // Automatically handle JSON stringification and set Content-Type header
-  if (options.body && typeof options.body === "object") {
-    options.body = JSON.stringify(options.body);
+  // Automatically set headers if a JSON body is present
+  if (options.body) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -53,21 +40,25 @@ export async function apiFetch<T>(
     }
   }
 
-  const response = await fetch(url, {
+  // Re-map the body back to a string for the native fetch API
+  const fetchOptions: RequestInit = {
     ...options,
+    body: options.body ? JSON.stringify(options.body) : undefined,
     headers,
-    credentials: "include", // Required for session and CSRF cookies to be sent
-  });
+    credentials: "include", 
+  };
 
-  // Handle cases where the response might not be JSON (e.g., 204 No Content)
+  const response = await fetch(url, fetchOptions);
+
   const isJson = response.headers.get("content-type")?.includes("application/json");
-  const data = isJson ? ((await response.json()) as T) : ({} as T);
+  
+  // REFACTOR: Removed loose 'any' casting
+  const data = isJson ? ((await response.json()) as Record<string, unknown>) : {};
 
   if (!response.ok) {
-    // Attempt to extract error message from backend response
-    const errorMsg = (data as any)?.error || `HTTP error! status: ${response.status}`;
+    const errorMsg = (data as { error?: string }).error || `HTTP error! status: ${response.status}`;
     throw new Error(errorMsg);
   }
 
-  return data;
+  return data as T;
 }
