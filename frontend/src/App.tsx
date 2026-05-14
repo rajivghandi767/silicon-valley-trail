@@ -1,4 +1,3 @@
-// frontend/src/App.tsx
 import { useState, useEffect } from "react";
 import { apiFetch } from "./utils/api";
 import { GameState, GameAction } from "./types";

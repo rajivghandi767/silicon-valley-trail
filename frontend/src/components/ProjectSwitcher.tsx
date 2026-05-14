@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 
-const PROJECTS = [
+export interface ProjectData {
+  name: string;
+  url: string;
+  icon: string;
+  desc: string;
+}
+
+const DEFAULT_PROJECTS: ProjectData[] = [
   {
     name: "Portfolio",
     url: "https://rajivwallace.com",
@@ -16,12 +23,18 @@ const PROJECTS = [
   {
     name: "Prop & Ferry",
     url: "https://prop-ferry.rajivwallace.com",
-    icon: "✈️",
+    icon: "⛴️",
     desc: "Caribbean hopping",
   },
 ];
 
-export function ProjectSwitcher() {
+interface ProjectSwitcherProps {
+  projects?: ProjectData[];
+}
+
+export function ProjectSwitcher({
+  projects = DEFAULT_PROJECTS,
+}: ProjectSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,11 +52,20 @@ export function ProjectSwitcher() {
   }, []);
 
   return (
-    <div className="project-switcher" ref={dropdownRef}>
+    <div
+      className="project-switcher"
+      ref={dropdownRef}
+      style={{ display: "flex", alignItems: "center", position: "relative" }}
+    >
       <button
         className="switcher-btn"
         onClick={() => setIsOpen(!isOpen)}
         title="More Projects"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -75,7 +97,7 @@ export function ProjectSwitcher() {
           >
             // MORE BY RAJIV
           </div>
-          {PROJECTS.map((p) => (
+          {projects.map((p) => (
             <a
               key={p.name}
               href={p.url}
