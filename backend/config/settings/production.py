@@ -13,7 +13,8 @@ load_dotenv(dotenv_path=env_path, override=True)
 # ============================================================================
 DEBUG = False
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv(
+    'ALLOWED_HOSTS', '').split(',') if host.strip()]
 
 # ============================================================================
 # DATABASE CONFIGURATION
