@@ -13,18 +13,31 @@ pipeline {
     }
 
     environment {
-        APP_NAME         = "Silicon Valley Trail"
-        SSH_CRED_ID      = "raspberry-pi-ssh"
-        VAULT_CRED_ID    = "vault-svt-approle"
-        REGISTRY_CRED_ID = "github-packages-pat"
+        // App Config
+        APP_NAME          = "Silicon Valley Trail"
+        REGISTRY          = "ghcr.io"
         
-        DEPLOY_USER = "dietpi"
-        DEPLOY_HOST = "10.100.10.5"
-        DEPLOY_DIR  = "/opt/homelab-iac/services/apps/svt"
+        // Credentials & Vault Config
+        SSH_CRED_ID       = "raspberry-pi-ssh"
+        VAULT_CRED_ID     = "vault-svt-approle"
+        REGISTRY_CRED_ID  = "github-packages-pat"
+        VAULT_URL         = "http://vault:8200"
+        VAULT_SECRET_PATH = "secret/svt-prod"
+        
+        // Deployment Target Config
+        DEPLOY_USER       = "dietpi"
+        DEPLOY_HOST       = "10.100.10.5"
+        DEPLOY_DIR        = "/opt/homelab-iac/services/apps/svt"
 
-        IMAGE_BACKEND  = "rajivghandi767/svt-backend"
-        IMAGE_FRONTEND = "rajivghandi767/svt-frontend"
-        IMAGE_NGINX    = "rajivghandi767/svt-nginx"
+        // Image Config
+        IMAGE_BACKEND     = "rajivghandi767/svt-backend"
+        IMAGE_FRONTEND    = "rajivghandi767/svt-frontend"
+        IMAGE_NGINX       = "rajivghandi767/svt-nginx"
+
+        // Notification Config (Discord Channel IDs)
+        DISCORD_SUCCESS   = "3066993"
+        DISCORD_SKIP      = "3447003"
+        DISCORD_FAIL      = "15158332"
     }
 
     stages {
@@ -40,8 +53,9 @@ pipeline {
             steps {
                 checkout scm
 
-                withVault(configuration: [vaultUrl: "http://vault:8200", vaultCredentialId: "${VAULT_CRED_ID}", engineVersion: 2], 
-                vaultSecrets: [[path: 'secret/svt-prod', secretValues: [
+                // Pulling runtime secrets from Vault using environment variables
+                withVault(configuration: [vaultUrl: env.VAULT_URL, vaultCredentialId: env.VAULT_CRED_ID, engineVersion: 2], 
+                vaultSecrets: [[path: env.VAULT_SECRET_PATH, secretValues: [
                     [envVar: 'DJANGO_SECRET_KEY', vaultKey: 'DJANGO_SECRET_KEY'],
                     [envVar: 'ALLOWED_HOSTS', vaultKey: 'ALLOWED_HOSTS'],
                     [envVar: 'CSRF_TRUSTED_ORIGINS', vaultKey: 'CSRF_TRUSTED_ORIGINS'],
@@ -54,7 +68,7 @@ pipeline {
                     [envVar: 'ADMIN_URL', vaultKey: 'ADMIN_URL'],
                     [envVar: 'DISCORD_WEBHOOK_URL', vaultKey: 'DISCORD_WEBHOOK_URL'],
                 ]]]) {
-                    withCredentials([usernamePassword(credentialsId: REGISTRY_CRED_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: env.REGISTRY_CRED_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASS')]) {
                         script {
                             env.CURRENT_TAG = params.TAG_TO_DEPLOY
 
@@ -73,23 +87,24 @@ pipeline {
                                 echo "DISCORD_WEBHOOK_URL='${DISCORD_WEBHOOK_URL}'" >> .env.prod
                             '''
 
-                            sshagent([SSH_CRED_ID]) {
+                            sshagent([env.SSH_CRED_ID]) {
                                 sh """
                                     mkdir -p ~/.ssh
-                                    ssh-keyscan -H ${DEPLOY_HOST} >> ~/.ssh/known_hosts || true
-                                    echo "📦 Syncing files to ${DEPLOY_HOST}..."
-                                    scp docker-compose.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/docker-compose.yml
-                                    scp .env.prod ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/.env
+                                    ssh-keyscan -H ${env.DEPLOY_HOST} >> ~/.ssh/known_hosts || true
+                                    echo "📦 Syncing files to ${env.DEPLOY_HOST}..."
+                                    scp docker-compose.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_DIR}/docker-compose.yml
+                                    scp .env.prod ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_DIR}/.env
                                 """
 
-                                sh "echo \$REGISTRY_PASS | ssh ${DEPLOY_USER}@${DEPLOY_HOST} 'docker login ghcr.io -u ${REGISTRY_USER} --password-stdin'"
+                                // Login to registry dynamically
+                                sh "echo \$REGISTRY_PASS | ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} 'docker login ${env.REGISTRY} -u ${REGISTRY_USER} --password-stdin'"
 
                                 def isManualDeploy = params.TAG_TO_DEPLOY != 'latest'
                                 def localCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                                 
                                 def remoteCommit = sh(script: """
-                                    ssh ${DEPLOY_USER}@${DEPLOY_HOST} "
-                                        cd ${DEPLOY_DIR}
+                                    ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "
+                                        cd ${env.DEPLOY_DIR}
                                         CID=\\\$(docker compose ps -q svt-backend 2>/dev/null)
                                         if [ ! -z \\\"\\\$CID\\\" ]; then
                                             docker inspect --format '{{ index .Config.Labels \\"git-commit\\" }}' \\\$CID
@@ -108,15 +123,15 @@ pipeline {
                                     env.DEPLOY_STATUS = "SKIPPED"
                                 } else {
                                     echo "🚀 Code Change detected. Pulling images..."
-                                    sh "ssh ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_DIR} && IMAGE_TAG=${params.TAG_TO_DEPLOY} docker compose pull'"
+                                    sh "ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} 'cd ${env.DEPLOY_DIR} && IMAGE_TAG=${params.TAG_TO_DEPLOY} docker compose pull'"
                                     shouldDeploy = true
                                 }
 
                                 if (shouldDeploy) {
                                     echo "🚀 Deploying..."
                                     sh """
-                                        ssh ${DEPLOY_USER}@${DEPLOY_HOST} "
-                                            cd ${DEPLOY_DIR}
+                                        ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "
+                                            cd ${env.DEPLOY_DIR}
                                             chmod 600 .env
                                             IMAGE_TAG=${params.TAG_TO_DEPLOY} docker compose up -d --remove-orphans
                                             docker image prune -f
@@ -125,7 +140,8 @@ pipeline {
                                     env.DEPLOY_STATUS = "UPDATED"
                                 }
                                 
-                                sh "ssh ${DEPLOY_USER}@${DEPLOY_HOST} 'docker logout ghcr.io'"
+                                // Logout from registry dynamically
+                                sh "ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} 'docker logout ${env.REGISTRY}'"
                                 sh "rm .env.prod"
                             }
                         }
@@ -141,20 +157,20 @@ pipeline {
                 def timestamp = sh(returnStdout: true, script: "TZ='America/New_York' date +'%a, %d %b %Y at %H:%M %Z'").trim()
 
                 if (env.DEPLOY_STATUS == "UPDATED") {
-                    def msg = ":unicorn: **${env.APP_NAME} Update Deployed**\n**:new: New Version Live:**\n• **Tag:** ${params.TAG_TO_DEPLOY}\n• **Backend:** ${IMAGE_BACKEND}\n• **Frontend:** ${IMAGE_FRONTEND}\n• **Nginx:** ${IMAGE_NGINX}\n\n:bar_chart: **Status:** Healthy\n:clock4: **Time:** ${timestamp}"
-                    notifyDiscord("🚀 Deployment Successful", msg, 3066993)
+                    def msg = ":unicorn: **${env.APP_NAME} Update Deployed**\n**:new: New Version Live:**\n• **Tag:** ${params.TAG_TO_DEPLOY}\n• **Backend:** ${env.IMAGE_BACKEND}\n• **Frontend:** ${env.IMAGE_FRONTEND}\n• **Nginx:** ${env.IMAGE_NGINX}\n\n:bar_chart: **Status:** Healthy\n:clock4: **Time:** ${timestamp}"
+                    notifyDiscord("🚀 Deployment Successful", msg, env.DISCORD_SUCCESS)
                 } 
                 else if (env.DEPLOY_STATUS == "SKIPPED") {
                     def msg = ":shield: **${env.APP_NAME} Up to Date**\nNo new code changes found for tag: **${params.TAG_TO_DEPLOY}**.\nRunning services remain unchanged.\n\n:clock4: **Time:** ${timestamp}"
-                    notifyDiscord("✅ Check Complete: No Changes", msg, 3447003)
+                    notifyDiscord("✅ Check Complete: No Changes", msg, env.DISCORD_SKIP)
                 }
             }
         }
         failure {
             script {
                 def failTime = sh(returnStdout: true, script: "TZ='America/New_York' date +'%a, %d %b %Y at %H:%M %Z'").trim()
-                def msg = ":x: **${env.APP_NAME} Deployment Failed**\n**:warning: Error Details:**\nCheck Jenkins logs for build #${BUILD_NUMBER}.\n:wrench: **Action Required:** Manual intervention needed.\n\n:clock4: **Time:** ${failTime}"
-                notifyDiscord("🚨 Deployment Alert", msg, 15158332)
+                def msg = ":x: **${env.APP_NAME} Deployment Failed**\n**:warning: Error Details:**\nCheck Jenkins logs for build #${env.BUILD_NUMBER}.\n:wrench: **Action Required:** Manual intervention needed.\n\n:clock4: **Time:** ${failTime}"
+                notifyDiscord("🚨 Deployment Alert", msg, env.DISCORD_FAIL)
             }
         }
     }
