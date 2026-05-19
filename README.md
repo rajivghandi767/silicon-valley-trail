@@ -1,69 +1,69 @@
-# 🌴 Silicon Valley Trail
-
-**Silicon Valley Trail** is an interactive, full-stack web application originally developed as a submission for the LinkedIn REACH Backend Apprenticeship program. Inspired by the classic Oregon Trail, players must manage resources, technical debt, and real-time Caribbean weather conditions to successfully pitch a Senior Engineering Director vacationing in Dominica.
-
-This repository demonstrates modern web development practices, focusing heavily on **systems architecture, CI/CD automation, and resource optimization** for self-hosted infrastructure.
+# 🌴 💻 Silicon Valley Trail
 
 ![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)
 ![Django](https://img.shields.io/badge/Django-092E20?style=flat&logo=django&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=flat&logo=docker&logoColor=white)
 ![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat&logo=jenkins&logoColor=white)
 
----
+**Live Demo:** [**svt.rajivwallace.com**](https://svt.rajivwallace.com)
 
-## 🏗️ Architecture & Tech Stack
+**Silicon Valley Trail** is a turn-based, API-driven strategy web application. Players must manage technical debt, financial resources, and real-time Caribbean weather patterns to successfully navigate from New York City to Dominica and pitch a vacationing Engineering Director.
 
-This project is deployed on a custom Homelab infrastructure (Raspberry Pi 4B running headless DietPi), requiring strict memory management and highly optimized I/O operations.
+Originally developed as a time-boxed submission for the **LinkedIn REACH Apprenticeship**, this repository has been extensively refactored to demonstrate modern production standards, focusing on robust backend decoupling, CI/CD pipeline automation, and strict data security.
 
-- **Frontend:** TypeScript, React, Vite, standard CSS.
-- **Backend:** Python, Django (utilizing standard views and `JsonResponse`), Prometheus metrics.
-- **Database & Caching:** PostgreSQL.
-- **External APIs:** Open-Meteo (Real-time Marine & Aviation forecasting).
-- **Infrastructure:** Docker, Nginx Proxy Manager, Cloudflare.
-- **CI/CD:** Jenkins, GitHub Container Registry (ghcr.io), HashiCorp Vault.
+> **⚠️ Note for LinkedIn REACH Recruitment:**
+> This `main` branch reflects the post-interview refactor and production deployment. If you are looking to review the original, unedited take-home submission, please visit the [**archive/linkedin-reach-submission**](https://github.com/rajivghandi767/silicon-valley-trail/tree/archive/linkedin-reach-submission) branch.
 
 ---
 
-## 🚀 Engineering Highlights & Optimizations
+## 🚀 Post-Interview Refactor & Improvements
 
-### 1. Database Caching for Game State Management
+Following a technical pair-programming session, this codebase underwent a comprehensive architectural overhaul to transition from a local prototype to a scalable, production-ready application:
 
-To conserve memory and minimize disk I/O on the host machine, temporary game state was completely decoupled from the Django ORM. Instead of spinning up a dedicated Redis container, the application utilizes `django.core.cache.backends.db.DatabaseCache` to write serialized Python objects directly to a lightweight, auto-culling PostgreSQL cache table. Persistent data (like island coordinates) remains in standard relational tables.
-
-### 2. "Skinny Views, Fat Services"
-
-The backend architecture strictly adheres to modular design principles.
-
-- Complex external API logic (weather forecasting) is abstracted into a dedicated `services` layer.
-- Dynamic game states, win/loss boundaries, and statistical mutations are handled by an isolated `engine`.
-- All narrative strings and status messages are decentralized into `constants.py`, leaving the HTTP routing (`views.py`) clean, readable, and highly testable.
-
-### 3. Production-Grade Security & Routing
-
-- **Nginx Preflight Interception:** CORS is handled entirely at the Nginx reverse-proxy level using `$http_origin` maps, instantly returning `204 No Content` for `OPTIONS` requests without waking up Django Gunicorn workers.
-- **CSRF Protection:** Full CSRF handshake implementation between the React SPA and Django via `@ensure_csrf_cookie` and `X-CSRFToken` headers.
-- **Rate Limiting:** Dedicated Nginx zones established to protect the API, admin panels, and static file delivery from abuse.
-
-### 4. Automated CI/CD Pipeline
-
-Deployment is fully automated via Jenkins Multibranch Pipelines (`Jenkinsfile` and `Jenkinsfile.deploy`).
-
-1. **Build:** Jenkins checks out the code, builds the `backend`, `frontend`, and `nginx` Docker images, tags them with the Git commit hash, and pushes them to GitHub Container Registry.
-2. **Secrets Injection:** The deployment script dynamically authenticates with **HashiCorp Vault** (via AppRole) to securely pull and generate the `.env.prod` file directly on the host agent.
-3. **Deploy:** A remote SSH command pulls the latest images and spins up the Docker Compose stack seamlessly.
+- **Redis Game Session Caching:** Transitioned temporary game state management to Redis caching. This decouples dynamic session data from the relational database, significantly reducing disk I/O and optimizing read/write speeds during the core game loop.
+- **Separation of Concerns ("Fat Models, Skinny Views"):** Decoupled the monolithic `views.py`. Complex external API logic (weather routing) is now abstracted into a dedicated `services` layer, and state mutations are handled by an isolated `engine`.
+- **Security Hardening:** Removed the development-phase `@csrf_exempt` decorators. The application now executes a full CSRF handshake between the React SPA and Django via `@ensure_csrf_cookie` and strict `X-CSRFToken` header validation.
+- **Database Modernization:** Migrated the data layer from SQLite to a dedicated, containerized PostgreSQL instance to support highly concurrent transactions.
+- **Clean Code & Maintainability:** Eradicated "magic numbers" across the backend by centralizing configurations and narrative strings into dedicated constant files.
+- **Gameplay & UX Rebalancing:** Introduced positive random events for successful turns to improve player progression, and overhauled the frontend CSS to ensure the game is fully responsive and playable on mobile screens.
 
 ---
 
-## 💻 Local Development
+## 🏗️ Architecture & Infrastructure
+
+This application utilizes a strict **"Smart Server / Dumb Client"** architecture. Production is deployed on a custom self-hosted bare-metal environment (headless Debian) utilizing strict environment segregation.
+
+### Backend Pipeline & Integrations
+
+- **Engine:** Python / Django REST APIs.
+- **Data Layer:** PostgreSQL (persistent data) & Redis (session caching).
+- **External Integrations:** Open-Meteo APIs (Dynamic real-time marine and aviation forecasting dictating travel risk algorithms).
+- **Network Security:** Nginx handles CORS interception via `$http_origin` maps, dropping unauthorized `OPTIONS` requests natively to conserve Gunicorn worker cycles. Dedicated rate-limiting zones protect API routes.
+- **Dependency Management:** Python dependencies are deterministically managed via `pip-tools`. Strict separation is enforced between lightweight production packages (`requirements.txt`) and testing/local middleware (`dev-requirements.txt`).
+
+### CI/CD & DevOps Automation
+
+Deployments are fully automated via Jenkins Multibranch Pipelines (`Jenkinsfile` and `Jenkinsfile.deploy`).
+
+1. **Build & Tag:** Jenkins tests the codebase, builds the `backend`, `frontend`, and `nginx` Docker images, and pushes them to the GitHub Container Registry (ghcr.io) tagged with the exact Git commit hash.
+2. **Secret Injection:** The pipeline authenticates dynamically with **HashiCorp Vault** to securely pull and inject environment variables into the host agent.
+3. **Orchestration:** A remote SSH command pulls the latest images and executes zero-downtime updates via Docker Compose.
+
+---
+
+## 💻 Local Development Quick Start (Zero-Friction Setup)
+
+The local development environment is strictly isolated from production infrastructure. The default `docker-compose.yml` utilizes lightweight, hot-reloading images tailored for a seamless developer (and reviewer) experience.
 
 ### Prerequisites
 
 - Docker & Docker Compose
 - Git
 
-### Quick Start
+### Installation
 
 1. **Clone the repository:**
 
@@ -72,21 +72,39 @@ Deployment is fully automated via Jenkins Multibranch Pipelines (`Jenkinsfile` a
    cd silicon-valley-trail
    ```
 
-2. **Environment Variables:**
-   Copy the example environment files and update them if necessary (the defaults work out-of-the-box for local testing).
+2. **Configure Environment Variables:**
+   Copy the example `.env` file. The defaults are pre-configured to automatically route the frontend, backend, PostgreSQL, and Redis containers over a custom local Docker network out-of-the-box.
 
    ```bash
-   cp .env.example
+   cp .env.example .env
    ```
 
 3. **Spin up the stack:**
+   This command will build the containers, run database migrations, load narrative seed data, and start the local servers.
 
    ```bash
    docker compose up --build -d
    ```
 
 4. **Access the application:**
-   - Frontend: `http://localhost:5173`
+   - Frontend SPA: `http://localhost:5173`
    - Backend API: `http://localhost:8000/api/`
+   - PostgreSQL (Direct Inspection): `localhost:5432`
+   - Redis (Direct Inspection): `localhost:6379`
 
-_Note: The local development environment automatically defaults to Django's `LocMemCache` (Local Memory Cache) to completely bypass the need for generating Postgres cache tables while developing._
+---
+
+## 🧪 Testing Coverage
+
+The Django test suite (`django.test.TestCase`) ensures strict mathematical validation of the resource economy and fault tolerance. Tests are isolated and cover:
+
+- **Resource Economics:** Verifying stationary actions calculate precise mathematical deltas (e.g., resting caps morale boosts while deducting time and cash).
+- **Dependency Mocking:** Utilizing `@patch` to mock external API weather data and control RNG matrices, ensuring deterministic state progression during testing.
+- **Network Fallbacks:** Intentionally injecting `urllib` exceptions to validate the "Fail Aggressive" logic, ensuring backend continuity during network timeouts.
+- **Terminal Boundaries:** Verifying game-over states and database safety locks trigger appropriately upon hitting specific loss conditions.
+
+Run the suite locally via:
+
+```bash
+docker compose exec backend python manage.py test
+```

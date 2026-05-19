@@ -1,0 +1,11 @@
+# Common Packages for Dev & Prod Environments
+
+# Core Framework
+django
+
+# Django Apps
+django-prometheus
+
+# Utilities
+python-dotenv
+django-redis

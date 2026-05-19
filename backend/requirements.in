@@ -1,0 +1,8 @@
+# Production Requirements
+-r common.in
+
+# Database
+psycopg
+
+# Web Server
+gunicorn

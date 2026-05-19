@@ -92,7 +92,7 @@ pipeline {
                                     mkdir -p ~/.ssh
                                     ssh-keyscan -H ${env.DEPLOY_HOST} >> ~/.ssh/known_hosts || true
                                     echo "📦 Syncing files to ${env.DEPLOY_HOST}..."
-                                    scp docker-compose.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_DIR}/docker-compose.yml
+                                    scp docker-compose.prod.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_DIR}/docker-compose.yml
                                     scp .env.prod ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_DIR}/.env
                                 """
 
