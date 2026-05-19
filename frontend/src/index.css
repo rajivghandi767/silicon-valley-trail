@@ -92,14 +92,26 @@ body {
   overflow: hidden;
 }
 
-/* --- Header --- */
+/* --- Header (FLEXBOX REFACTOR) --- */
 .header {
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 1rem;
   margin-bottom: 2rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap; /* CRITICAL: Prevent stacking */
+  gap: 1rem;
+}
+
+.title {
+  color: var(--accent-blue);
+  margin: 0;
+  font-size: 1.5rem;
+  flex: 1 1 auto; /* Allow title to shrink */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Graceful cutoff */
 }
 
 .header-controls {
@@ -107,6 +119,7 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
+  flex-shrink: 0; /* CRITICAL: Prevent buttons from squishing */
 }
 
 /* Strip native mobile margins */
@@ -124,17 +137,12 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .restart-btn:hover:not(:disabled) {
   background-color: var(--accent-orange);
   color: var(--bg-color);
-}
-
-.title {
-  color: var(--accent-blue);
-  margin: 0;
-  font-size: 1.5rem;
 }
 
 /* --- Terminal Output Area --- */
@@ -262,84 +270,72 @@ body {
     display: contents;
   }
 
+  /* RIGID FLEXBOX FOR MOBILE HEADER */
   .header {
     order: 1;
-    display: grid;
-    grid-template-columns: 80px 1fr 80px;
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 0;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
     margin-bottom: 0;
     padding: 0.5rem;
     background-color: var(--bg-color);
     border-bottom: 1px solid var(--border-color);
   }
 
-  .sidebar {
-    order: 2;
-  }
-  .game-content {
-    order: 3;
-  }
-  .footer {
-    order: 4;
+  .title {
+    flex: 1 1 auto;
+    font-size: 1rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0;
+    margin: 0;
   }
 
   .header-controls {
-    display: contents;
-  }
-
-  .project-switcher {
-    grid-column: 1;
-    justify-self: start;
-    align-self: center;
     display: flex;
+    flex-direction: row;
     align-items: center;
-    margin: 0;
-    padding: 0;
+    gap: 0.5rem;
+    flex-shrink: 0; /* Prevents icons from squishing */
   }
 
-  .title {
-    grid-column: 2;
-    font-size: 0.95rem;
-    text-align: center;
-    white-space: normal;
-    line-height: 1.3;
-    padding: 0 0.5rem;
-    margin: 0;
-    align-self: center;
-  }
-
-  /* FULLY HEIGHT-LOCKED CONTROLS FOR MOBILE AXIS ALIGNMENT */
+  /* Force square buttons for icons to guarantee alignment */
   .restart-btn {
-    grid-column: 3;
-    justify-self: end;
-    align-self: center;
-    padding: 0 0.5rem;
+    padding: 0;
     font-size: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0;
     height: 38px;
-    line-height: 1;
+    width: 38px;
+    flex-shrink: 0;
   }
 
   .switcher-btn {
-    padding: 0 0.5rem;
+    padding: 0;
     font-size: 0.75rem;
     margin: 0;
     height: 38px;
+    width: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   .switcher-dropdown {
-    right: auto;
-    left: 0;
+    right: 0;
+    left: auto; /* Aligns dropdown correctly under the right-side control */
   }
 
   .sidebar {
+    order: 2;
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border-color);
@@ -381,6 +377,7 @@ body {
   }
 
   .game-content {
+    order: 3;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -427,6 +424,7 @@ body {
   }
 
   .footer {
+    order: 4;
     flex-direction: column;
     gap: 0.5rem;
     align-items: center;

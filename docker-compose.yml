@@ -20,7 +20,8 @@ services:
         echo 'Database is ready!' &&
         python manage.py migrate --noinput &&
         python manage.py load_islands &&
-        python manage.py collectstatic --noinput"
+        python manage.py collectstatic --noinput &&
+        chown -R 1000:1000 /home/backend/django/staticfiles"
 
   # SVT Backend - Django
   svt-backend:
@@ -39,7 +40,7 @@ services:
       - svt_logs:/home/backend/django/logs
     user: "backend:backend_group"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -57,7 +58,7 @@ services:
       svt-backend:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/" ]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -79,7 +80,7 @@ services:
       - svt_static:/usr/share/nginx/html/static:ro
       - svt_logs:/var/log/nginx
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/nginx-status/" ]
+      test: ["CMD", "curl", "-f", "http://localhost/nginx-status/"]
       interval: 30s
       timeout: 10s
       retries: 3
