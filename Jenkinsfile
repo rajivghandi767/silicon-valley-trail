@@ -15,17 +15,17 @@ pipeline {
 
         // Vault Config
         VAULT_URL         = "http://vault:8200"
-        VAULT_CRED_ID     = "vault-svt-approle"
-        VAULT_SECRET_PATH = "secret/svt-prod"
+        VAULT_CRED_ID     = "vault-${PROJECT_NAME}-approle"
+        VAULT_SECRET_PATH = "secret/${PROJECT_NAME}-prod"
 
         // Image Tags
         IMAGE_BACKEND     = "rajivghandi767/${PROJECT_NAME}-backend"
         IMAGE_FRONTEND    = "rajivghandi767/${PROJECT_NAME}-frontend"
         IMAGE_NGINX       = "rajivghandi767/${PROJECT_NAME}-nginx"
 
-        // Notification Config (Discord Channel IDs)
-        DISCORD_SUCCESS   = "3066993"
-        DISCORD_FAIL      = "15158332"
+        // Discord Notification Config
+        DISCORD_SUCCESS_COLOR = "3066993"
+        DISCORD_FAIL_COLOR    = "15158332"
     }
 
     stages {
@@ -66,8 +66,8 @@ pipeline {
                     def gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
 
                     // Pulling build-time variables from Vault using environment variables
-                    withVault(configuration: [vaultUrl: env.VAULT_URL, vaultCredentialId: env.VAULT_CRED_ID, engineVersion: 2], 
-                    vaultSecrets: [[path: env.VAULT_SECRET_PATH, secretValues: [
+                    withVault(configuration: [vaultUrl: "${env.VAULT_URL}", vaultCredentialId: "${env.VAULT_CRED_ID}", engineVersion: 2], 
+                    vaultSecrets: [[path: "${env.VAULT_SECRET_PATH}", secretValues: [
                         [envVar: 'VITE_API_URL', vaultKey: 'VITE_API_URL']
                     ]]]) {
                         
@@ -104,13 +104,13 @@ pipeline {
         success {
             script {
                 def msg = "Build **#${env.BUILD_NUMBER}** completed successfully.\n[View Jenkins Logs](${env.BUILD_URL})"
-                notifyDiscord("✅ ${env.APP_NAME} Build Success", msg, env.DISCORD_SUCCESS)
+                notifyDiscord("✅ ${env.APP_NAME} Build Success", msg, env.DISCORD_SUCCESS_COLOR.toInteger())
             }
         }
         failure {
             script {
                 def msg = "Check Jenkins logs for build **#${env.BUILD_NUMBER}**.\n[View Jenkins Logs](${env.BUILD_URL})"
-                notifyDiscord("🚨 ${env.APP_NAME} Build Failed", msg, env.DISCORD_FAIL)
+                notifyDiscord("🚨 ${env.APP_NAME} Build Failed", msg, env.DISCORD_FAIL_COLOR.toInteger())
             }
         }
     }
