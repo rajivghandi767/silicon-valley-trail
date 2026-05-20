@@ -21,6 +21,15 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv(
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # ============================================================================
+# STATIC & MEDIA FILES FOR PRODUCTION
+# ============================================================================
+
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/backend/django/staticfiles'
+
+os.makedirs(STATIC_ROOT, exist_ok=True)
+
+# ============================================================================
 # DATABASE & CACHE CONFIGURATION
 # ============================================================================
 DATABASES = {
@@ -68,6 +77,8 @@ SESSION_COOKIE_HTTPONLY = True
 # ============================================================================
 # LOGGING FOR PRODUCTION
 # ============================================================================
+# Updated to use absolute paths so logs are written to the persistent 'svt_logs'
+# Docker volume rather than vanishing if the container rebuilds.
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -86,13 +97,13 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs/svt.log',
+            'filename': '/home/backend/django/logs/svt.log',
             'formatter': 'verbose',
         },
         'error_file': {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs/errors.log',
+            'filename': '/home/backend/django/logs/errors.log',
             'formatter': 'verbose',
         },
     },
