@@ -5,7 +5,7 @@ pipeline {
 
     triggers {
         cron('''TZ=America/New_York
-30 2 * * *''')
+20 1 * * *''')
     }
 
     parameters {
@@ -27,7 +27,7 @@ pipeline {
         // Deployment Target Config
         DEPLOY_USER       = "dietpi"
         DEPLOY_HOST       = "10.100.10.5"
-        DEPLOY_DIR        = "/opt/homelab-iac/services/apps/svt"
+        DEPLOY_DIR        = "/opt/homelab-iac/services/apps/silicon-valley-trail"
 
         // Image Config
         IMAGE_BACKEND     = "rajivghandi767/svt-backend"
