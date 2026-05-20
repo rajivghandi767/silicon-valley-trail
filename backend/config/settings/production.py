@@ -9,20 +9,19 @@ env_path = BASE_DIR / '.env'
 load_dotenv(dotenv_path=env_path, override=True)
 
 # ============================================================================
-# PRODUCTION SECURITY SETTINGS
+# PRODUCTION SECURITY & PROXY SETTINGS
 # ============================================================================
 DEBUG = False
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+
 ALLOWED_HOSTS = [host.strip() for host in os.getenv(
     'ALLOWED_HOSTS', '').split(',') if host.strip()]
 
-# ============================================================================
-# PROXY SSL SETTINGS
-# ============================================================================
+# Trust the upstream proxy's SSL termination
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # ============================================================================
-# DATABASE CONFIGURATION
+# DATABASE & CACHE CONFIGURATION
 # ============================================================================
 DATABASES = {
     'default': {
@@ -46,14 +45,21 @@ CACHES = {
 }
 
 # ============================================================================
-# CSRF AND SESSION SETTINGS FOR PRODUCTION
+# CSRF AND SESSION SETTINGS FOR PRODUCTION (CROSS-SUBDOMAIN)
 # ============================================================================
-CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv(
     'CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+
+# Cross-Subdomain Scope dynamically injected via Jenkins
+CSRF_COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN')
+SESSION_COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN')
+
+# CSRF configuration allowing the frontend to read the token
+CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'None'
 
+# Session configuration (Strictly HttpOnly)
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'None'

@@ -60,6 +60,8 @@ pipeline {
                     [envVar: 'DJANGO_SECRET_KEY', vaultKey: 'DJANGO_SECRET_KEY'],
                     [envVar: 'ALLOWED_HOSTS', vaultKey: 'ALLOWED_HOSTS'],
                     [envVar: 'CSRF_TRUSTED_ORIGINS', vaultKey: 'CSRF_TRUSTED_ORIGINS'],
+                    [envVar: 'CSRF_COOKIE_DOMAIN', vaultKey: 'COOKIE_DOMAIN'],
+                    [envVar: 'SESSION_COOKIE_DOMAIN', vaultKey: 'COOKIE_DOMAIN'],
                     [envVar: 'POSTGRES_HOST', vaultKey: 'POSTGRES_HOST'],
                     [envVar: 'POSTGRES_PORT', vaultKey: 'POSTGRES_PORT'],
                     [envVar: 'POSTGRES_USER', vaultKey: 'POSTGRES_USER'],
@@ -78,6 +80,8 @@ pipeline {
                                 echo "DJANGO_SECRET_KEY='${DJANGO_SECRET_KEY}'" >> .env.prod
                                 echo "ALLOWED_HOSTS='${ALLOWED_HOSTS}'" >> .env.prod
                                 echo "CSRF_TRUSTED_ORIGINS='${CSRF_TRUSTED_ORIGINS}'" >> .env.prod
+                                echo "CSRF_COOKIE_DOMAIN='${CSRF_COOKIE_DOMAIN}'" >> .env.prod
+                                echo "SESSION_COOKIE_DOMAIN='${SESSION_COOKIE_DOMAIN}'" >> .env.prod
                                 echo "POSTGRES_HOST='${POSTGRES_HOST}'" >> .env.prod
                                 echo "POSTGRES_PORT='${POSTGRES_PORT}'" >> .env.prod
                                 echo "POSTGRES_USER='${POSTGRES_USER}'" >> .env.prod
