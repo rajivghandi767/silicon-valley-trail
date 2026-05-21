@@ -60,8 +60,8 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv(
     'CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
 
 # Cross-Subdomain Scope dynamically injected via Jenkins
-CSRF_COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN')
-SESSION_COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN')
+CSRF_COOKIE_DOMAIN = os.getenv('CSRF_COOKIE_DOMAIN')
+SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN')
 
 # CSRF configuration allowing the frontend to read the token
 CSRF_COOKIE_SECURE = True
