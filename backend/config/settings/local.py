@@ -1,4 +1,3 @@
-# backend/config/settings/local.py
 from .base import *
 import os
 import socket
@@ -9,8 +8,7 @@ from urllib.parse import urlparse
 # ============================================================================
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY',
-                       'django-insecure-local-dev-key-svt')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS', 'localhost,127.0.0.1,backend').split(',')
@@ -72,17 +70,17 @@ def is_service_available(host, port, timeout=0.2):
 # ============================================================================
 # DATABASE FALLBACK LOGIC
 # ============================================================================
-POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+POSTGRES_HOST = os.getenv('POSTGRES_HOST')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT')
 
 if is_service_available(POSTGRES_HOST, POSTGRES_PORT):
     print(f"✅ Connected to Postgres at {POSTGRES_HOST}:{POSTGRES_PORT}")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'svt_db'),
-            'USER': os.getenv('POSTGRES_USER', 'svt_user'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'svt_password'),
+            'NAME': os.getenv('POSTGRES_DB'),
+            'USER': os.getenv('POSTGRES_USER'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
             'HOST': POSTGRES_HOST,
             'PORT': POSTGRES_PORT,
         }
@@ -99,11 +97,10 @@ else:
 # ============================================================================
 # CACHING FALLBACK LOGIC
 # ============================================================================
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+REDIS_URL = os.getenv('REDIS_URL')
 redis_host, redis_port = None, None
 
 try:
-    # Extract host and port from the redis:// URL
     parsed_url = urlparse(REDIS_URL)
     redis_host = parsed_url.hostname
     redis_port = parsed_url.port or 6379
