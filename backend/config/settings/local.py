@@ -8,7 +8,8 @@ from urllib.parse import urlparse
 # ============================================================================
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY',
+                       'django-insecure-local-testing-key-svt')
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS', 'localhost,127.0.0.1,backend').split(',')
