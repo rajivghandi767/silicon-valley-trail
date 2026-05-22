@@ -1,6 +1,8 @@
 # backend/config/settings/local.py
 from .base import *
 import os
+import socket
+from urllib.parse import urlparse
 
 # ============================================================================
 # DEVELOPMENT SETTINGS
@@ -52,28 +54,78 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False
 
 # ============================================================================
-# DATABASE (Targeting svt-local-db container)
+# DYNAMIC CONNECTION TESTER
 # ============================================================================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'svt_db'),
-        'USER': os.getenv('POSTGRES_USER', 'svt_user'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'svt_password'),
-        'HOST': os.getenv('POSTGRES_HOST', 'db'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
-    }
-}
+
+
+def is_service_available(host, port, timeout=0.2):
+    """Attempts a socket connection to verify if a service is actually running."""
+    if not host or not port:
+        return False
+    try:
+        with socket.create_connection((host, int(port)), timeout=timeout):
+            return True
+    except (socket.timeout, ConnectionRefusedError, socket.gaierror, OSError):
+        return False
+
 
 # ============================================================================
-# CACHING (Targeting svt-local-redis container)
+# DATABASE FALLBACK LOGIC
 # ============================================================================
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/0'),
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+
+if is_service_available(POSTGRES_HOST, POSTGRES_PORT):
+    print(f"✅ Connected to Postgres at {POSTGRES_HOST}:{POSTGRES_PORT}")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'svt_db'),
+            'USER': os.getenv('POSTGRES_USER', 'svt_user'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'svt_password'),
+            'HOST': POSTGRES_HOST,
+            'PORT': POSTGRES_PORT,
+        }
     }
-}
+else:
+    print("⚠️ Postgres unreachable. Falling back to SQLite.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# ============================================================================
+# CACHING FALLBACK LOGIC
+# ============================================================================
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+redis_host, redis_port = None, None
+
+try:
+    # Extract host and port from the redis:// URL
+    parsed_url = urlparse(REDIS_URL)
+    redis_host = parsed_url.hostname
+    redis_port = parsed_url.port or 6379
+except ValueError:
+    pass
+
+if is_service_available(redis_host, redis_port):
+    print(f"✅ Connected to Redis at {redis_host}:{redis_port}")
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    print("⚠️ Redis unreachable. Falling back to LocMemCache.")
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'local-dev-cache',
+        }
+    }
 
 # ============================================================================
 # LOGGING FOR DEVELOPMENT
