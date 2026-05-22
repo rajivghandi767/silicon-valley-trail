@@ -78,11 +78,6 @@ export function ReportModal() {
             ) : (
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: "1rem" }}>
-                  <label
-                    style={{ fontSize: "0.85rem", color: "var(--accent-blue)" }}
-                  >
-                    const issueType =
-                  </label>
                   <select
                     value={issueType}
                     onChange={(e) => setIssueType(e.target.value)}
@@ -96,11 +91,6 @@ export function ReportModal() {
                 </div>
 
                 <div style={{ marginBottom: "1.5rem" }}>
-                  <label
-                    style={{ fontSize: "0.85rem", color: "var(--accent-blue)" }}
-                  >
-                    const details =
-                  </label>
                   <textarea
                     required
                     rows={4}
@@ -111,13 +101,7 @@ export function ReportModal() {
                   />
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "1rem",
-                    justifyContent: "flex-end",
-                  }}
-                >
+                <div className="modal-actions">
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}

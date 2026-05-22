@@ -224,6 +224,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   text-align: center;
+  position: relative; /* Essential for anchoring the absolute Report Button */
 }
 
 .footer-links {
@@ -262,7 +263,7 @@ body {
   .app-container {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto; /* Changed to allow the container to scroll for sticky header */
     height: 100vh;
   }
 
@@ -283,6 +284,9 @@ body {
     padding: 0.5rem;
     background-color: var(--bg-color);
     border-bottom: 1px solid var(--border-color);
+    position: sticky; /* Make the header stick to the top */
+    top: 0;
+    z-index: 50;
   }
 
   .title {
@@ -442,13 +446,32 @@ body {
   }
 
   .floating-report-btn {
-    right: 0.5rem;
+    right: 1rem;
     bottom: 1rem;
     transform: scale(0.9);
   }
 
   .floating-report-btn:hover {
     transform: scale(1);
+  }
+
+  /* Wrap the modal action buttons on small screens and reset their sizes */
+  .modal-actions {
+    display: flex;
+    flex-direction: column-reverse; /* Stacks nicely: Cancel below, Submit above */
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  /* OVERRIDE the tiny square dashboard button styles for the modal */
+  .modal-actions .restart-btn,
+  .modal-actions .action-btn {
+    width: 100%;
+    max-width: none;
+    height: 48px; /* Large, easy touch target for mobile */
+    font-size: 1rem;
+    border-radius: 4px;
+    padding: 0;
   }
 }
 
@@ -520,8 +543,9 @@ body {
   line-height: 1.2;
 }
 
+/* Positioned relative to the footer now instead of the window */
 .floating-report-btn {
-  position: fixed;
+  position: absolute;
   bottom: 1.5rem;
   right: 1.5rem;
   background-color: var(--accent-blue);
@@ -601,4 +625,12 @@ body {
 
 .modal-textarea {
   resize: none;
+}
+
+/* Default style for desktop mode */
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
 }

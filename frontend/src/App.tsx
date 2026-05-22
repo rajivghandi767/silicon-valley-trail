@@ -345,9 +345,10 @@ function App() {
             <span style={{ margin: "0 0.5rem" }}>|</span>
             <a href="mailto:dev@rajivwallace.com">dev@rajivwallace.com</a>
           </span>
+
+          <ReportModal />
         </div>
       </div>
-      <ReportModal />
     </div>
   );
 }

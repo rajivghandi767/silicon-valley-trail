@@ -38,7 +38,7 @@ This application utilizes a strict **"Smart Server / Dumb Client"** architecture
 
 ### Backend Pipeline & Integrations
 
-- **Engine:** Python / Django REST APIs.
+- **Engine:** Python / Django APIs.
 - **Data Layer:** PostgreSQL (persistent data) & Redis (session caching).
 - **External Integrations:** Open-Meteo APIs (Dynamic real-time marine and aviation forecasting dictating travel risk algorithms).
 - **Network Security:** Nginx handles CORS interception via `$http_origin` maps, dropping unauthorized `OPTIONS` requests natively to conserve Gunicorn worker cycles. Dedicated rate-limiting zones protect API routes.
