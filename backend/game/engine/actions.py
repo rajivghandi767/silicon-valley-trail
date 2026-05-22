@@ -100,15 +100,25 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
 
     # 3. APPLY POST-TRAVEL EVENTS
     if successful_travel and next_location:
-        if next_location.reward_resource and hasattr(game, next_location.reward_resource):
-            current_resource = getattr(game, next_location.reward_resource)
-            setattr(game, next_location.reward_resource,
-                    current_resource + next_location.reward_amount)
 
-            if next_location.reward_message:
-                turn_message += f"\n\n> Destination Arrival: {next_location.reward_message}"
+        # Dynamically determine the final stop
+        total_stops = Location.objects.count()
 
-        event_message = trigger_random_event(game, next_location.name)
-        turn_message += f"\n\n> {event_message}"
+        # Only process rewards and events if we are NOT at the final stop
+        if next_location.sequence_in_journey < total_stops:
+
+            # 1. Apply resource rewards and messages
+            if next_location.reward_resource and hasattr(game, next_location.reward_resource):
+                current_resource = getattr(game, next_location.reward_resource)
+                setattr(game, next_location.reward_resource,
+                        current_resource + next_location.reward_amount)
+
+                if next_location.reward_message:
+                    turn_message += f"\n\n> Destination Arrival: {next_location.reward_message}"
+
+            # 2. Trigger random events
+            event_message = trigger_random_event(game, next_location.name)
+            if event_message:
+                turn_message += f"\n\n> {event_message}"
 
     return turn_message, error

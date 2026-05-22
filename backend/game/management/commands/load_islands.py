@@ -13,7 +13,8 @@ class Command(BaseCommand):
             {
                 "name": "New York City 🇺🇸", "latitude": 40.6413, "longitude": -73.7781,
                 "description": "The concrete jungle. Startup HQ and the start of the journey.",
-                "reward_resource": None, "reward_amount": 0, "reward_message": None
+                "reward_resource": "morale", "reward_amount": 10,
+                "reward_message": "You attended a local tech mixer and expanded your professional network. (+10 Morale)"
             },
             {
                 "name": "Anguilla 🇦🇮", "latitude": 18.2206, "longitude": -63.0686,
@@ -66,7 +67,8 @@ class Command(BaseCommand):
             {
                 "name": "Dominica 🇩🇲", "latitude": 15.4150, "longitude": -61.3710,
                 "description": "The Nature Island! Find Shalini Agarwal at the hiking festival and execute the pitch flawlessly.",
-                "reward_resource": None, "reward_amount": 0, "reward_message": None
+                "reward_resource": "morale", "reward_amount": 20,
+                "reward_message": "You took a screen break to hike the lush trails, completely resetting your mental stack. (+20 Morale)"
             },
         ]
 

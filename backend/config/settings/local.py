@@ -68,7 +68,6 @@ DATABASES = {
 # ============================================================================
 # CACHING (Targeting svt-local-redis container)
 # ============================================================================
-# Utilizing Django 4.0+ built-in Redis cache backend
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',

@@ -9,6 +9,7 @@ export interface GameState {
     current_location: string;
     description: string;
     sequence_in_journey: number;
+    total_stops: number;
     cash: number;
     award_miles: number;
     morale: number;

@@ -166,13 +166,13 @@ SESSION_RESTORED_MESSAGE: str = (
 
 VICTORY_MESSAGE: str = (
     "🏆 VICTORY: YOU SURVIVED THE TRAIL!\n"
-    "You reached Dominica 🇩🇲 and delivered a flawless pitch to Shalini! Your apprenticeship awaits.\n\n"
+    "You reached {location_name} and delivered a flawless pitch! Your apprenticeship awaits.\n\n"
     "> [ FINAL STATS ]\n"
     "  - Days to Spare: {days_remaining}\n"
     "  - Remaining Cash: ${cash}\n"
-    "  - Award Miles: {miles}\n"
-    "  - Final Morale: {morale}%\n"
-    "  - Pitch Bugs: {bugs}"
+    "  - Remaining Miles: {miles}\n"
+    "  - Morale: {morale}%\n"
+    "  - Bugs: {bugs}"
 )
 
 # --- Turn-by-Turn Narrative Logs ---

@@ -13,6 +13,11 @@ class CacheGameState:
         self.days_remaining = days_remaining
 
     @property
+    def total_stops(self):
+        """Dynamically fetch the max number of stops from the database"""
+        return Location.objects.count()
+
+    @property
     def is_lost(self):
         stops_remaining = 10 - self.current_location_id
         if self.days_remaining < stops_remaining:
@@ -51,24 +56,27 @@ class CacheGameState:
         location = Location.objects.filter(
             sequence_in_journey=self.current_location_id).first()
 
+        format_kwargs = {
+            "location_name": location.name if location else "Unknown",
+            "cash": self.cash,
+            "award_miles": self.award_miles,
+            "morale": self.morale,
+            "bugs": self.bugs,
+            "days_remaining": self.days_remaining
+        }
+
         if self.is_won:
-            status_text = STATUS_WON
+            status_text = STATUS_WON.format(**format_kwargs)
         elif self.is_lost:
-            status_text = STATUS_LOST
+            status_text = STATUS_LOST.format(**format_kwargs)
         else:
-            status_text = STATUS_ACTIVE.format(
-                location_name=location.name if location else "Unknown",
-                cash=self.cash,
-                award_miles=self.award_miles,
-                morale=self.morale,
-                bugs=self.bugs,
-                days_remaining=self.days_remaining
-            )
+            status_text = STATUS_ACTIVE.format(**format_kwargs)
 
         return {
             "current_location": location.name if location else "Unknown",
             "description": location.description if location else "",
             "sequence_in_journey": location.sequence_in_journey if location else 1,
+            "total_stops": self.total_stops,
             "cash": self.cash,
             "award_miles": self.award_miles,
             "morale": self.morale,

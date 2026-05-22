@@ -97,7 +97,7 @@ function App() {
               className="stat-label"
               style={{ opacity: 0.5, fontSize: "0.75rem" }}
             >
-              STOP {gameState.sequence_in_journey} OF 10
+              STOP {gameState.sequence_in_journey} OF {gameState.total_stops}
             </span>
           </div>
 
