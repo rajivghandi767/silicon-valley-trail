@@ -110,7 +110,7 @@ Navigate to the backend directory, create a virtual environment, and install the
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt -r dev-requirements.txt
+pip install -r dev-requirements.txt
 ```
 
 Ensure your local `.env` variables are configured, then apply migrations and start the server:
