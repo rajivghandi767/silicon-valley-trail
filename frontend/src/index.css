@@ -66,11 +66,22 @@ body {
 }
 
 .stat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--accent-blue);
-  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   white-space: nowrap;
+}
+
+.stat-emoji {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1;
+}
+
+.stat-text {
+  font-size: clamp(0.75rem, 1.5vw, 0.85rem);
 }
 
 .stat-value {
@@ -100,7 +111,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: nowrap; /* Prevent stacking */
+  flex-wrap: nowrap;
   gap: 1rem;
 }
 
@@ -108,10 +119,10 @@ body {
   color: var(--accent-blue);
   margin: 0;
   font-size: 1.5rem;
-  flex: 1 1 auto; /* Allow title to shrink */
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* Graceful cutoff */
+  text-overflow: ellipsis;
 }
 
 .header-controls {
@@ -119,10 +130,9 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-  flex-shrink: 0; /* Prevent buttons from squishing */
+  flex-shrink: 0;
 }
 
-/* Strip native mobile margins */
 .header-controls button,
 .header-controls .project-switcher {
   margin: 0;
@@ -178,11 +188,27 @@ body {
   background-color: transparent;
   color: var(--accent-green);
   border: 1px solid var(--accent-green);
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   font-family: inherit;
-  font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 8px;
+}
+
+.btn-emoji {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  line-height: 1;
+}
+
+.btn-text {
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  font-weight: bold;
+  white-space: nowrap;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -224,7 +250,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   text-align: center;
-  position: relative; /* Essential for anchoring the absolute Report Button */
+  position: relative;
 }
 
 .footer-links {
@@ -263,7 +289,7 @@ body {
   .app-container {
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Changed to allow the container to scroll for sticky header */
+    overflow-y: auto;
     height: 100vh;
   }
 
@@ -271,7 +297,6 @@ body {
     display: contents;
   }
 
-  /* RIGID FLEXBOX FOR MOBILE HEADER */
   .header {
     order: 1;
     display: flex;
@@ -284,7 +309,7 @@ body {
     padding: 0.5rem;
     background-color: var(--bg-color);
     border-bottom: 1px solid var(--border-color);
-    position: sticky; /* Make the header stick to the top */
+    position: sticky;
     top: 0;
     z-index: 50;
   }
@@ -305,19 +330,18 @@ body {
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
-    flex-shrink: 0; /* Prevents icons from squishing */
+    flex-shrink: 0;
   }
 
-  /* Force square buttons for icons to guarantee alignment */
+  /* Match the 38px height of the project switcher exactly */
   .restart-btn {
-    padding: 0;
-    font-size: 1.25rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    margin: 0;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0;
-    height: 38px;
-    width: 38px;
     flex-shrink: 0;
   }
 
@@ -335,7 +359,7 @@ body {
 
   .switcher-dropdown {
     right: 0;
-    left: auto; /* Aligns dropdown correctly under the right-side control */
+    left: auto;
   }
 
   .sidebar {
@@ -364,18 +388,33 @@ body {
     display: none;
   }
 
+  /* Responsive Mobile Stats Cards */
   .stat-block {
-    flex-direction: row;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     background: transparent;
     border: none;
     padding: 0;
-    gap: 0.35rem;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 50px;
   }
 
   .stat-label {
-    font-size: 1.1rem;
+    flex-direction: column;
+    gap: 0.15rem;
   }
+
+  .stat-emoji {
+    font-size: 1.25rem;
+  }
+
+  .stat-text {
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+  }
+
   .stat-value {
     font-size: 0.9rem;
   }
@@ -413,14 +452,9 @@ body {
 
   .action-btn {
     flex: 1;
-    max-width: 60px;
-    height: 50px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    border-radius: 8px;
+    max-width: none;
+    height: 65px;
+    padding: 0.25rem;
   }
 
   .action-separator {
@@ -455,23 +489,23 @@ body {
     transform: scale(1);
   }
 
-  /* Wrap the modal action buttons on small screens and reset their sizes */
   .modal-actions {
     display: flex;
-    flex-direction: column-reverse; /* Stacks nicely: Cancel below, Submit above */
+    flex-direction: column-reverse;
     gap: 0.75rem;
     margin-top: 1rem;
   }
 
-  /* OVERRIDE the tiny square dashboard button styles for the modal */
   .modal-actions .restart-btn,
   .modal-actions .action-btn {
     width: 100%;
     max-width: none;
-    height: 48px; /* Large, easy touch target for mobile */
+    height: 48px;
     font-size: 1rem;
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 0;
+    flex-direction: row;
+    gap: 0.5rem;
   }
 }
 
@@ -543,7 +577,6 @@ body {
   line-height: 1.2;
 }
 
-/* Positioned relative to the footer now instead of the window */
 .floating-report-btn {
   position: absolute;
   bottom: 1.5rem;
@@ -627,10 +660,21 @@ body {
   resize: none;
 }
 
-/* Default style for desktop mode */
+/* Revert modal actions to desktop layout on mobile */
 .modal-actions {
   display: flex;
-  gap: 1rem;
+  flex-direction: row;
   justify-content: flex-end;
-  margin-top: 1.5rem;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Prevent modal buttons from inheriting the large mobile dashboard styling */
+.modal-actions .action-btn {
+  width: auto;
+  height: auto;
+  flex: 0 1 auto;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
 }

@@ -1,4 +1,4 @@
-# 🌴 💻 Silicon Valley Trail
+# 🌴 💻 Silicon Valley Trail - Caribbean Edition
 
 ![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)
 ![Django](https://img.shields.io/badge/Django-092E20?style=flat&logo=django&logoColor=white)
@@ -34,11 +34,11 @@ Following a technical pair-programming session, this codebase underwent a compre
 
 ## 🏗️ Architecture & Infrastructure
 
-This application utilizes a strict **"Smart Server / Dumb Client"** architecture. Production is deployed on a custom self-hosted bare-metal environment (headless Debian) utilizing strict environment segregation.
+This application utilizes a strict **"Smart Server / Dumb Client"** architecture. Production is self-hosted on a bare-metal **Raspberry Pi 4B 8GB RAM** running a headless Debian distro (DietPi). To ensure strict environmental segregation and security, the network infrastructure is managed via **Ubiquiti UniFi** hardware, utilizing custom VLANs, VPNs, and firewall rules to safely sandbox traffic before routing through Cloudflare.
 
 ### Backend Pipeline & Integrations
 
-- **Engine:** Python / Django APIs.
+- **Engine:** Python / Django APIs. The backend utilizes an RPC-style (Action-Oriented) architecture rather than strict REST. Endpoints like /api/action/ and /api/state/ directly mutate the game's internal state machine, providing a much cleaner structure for turn-based gameplay loops.
 - **Data Layer:** PostgreSQL (persistent data) & Redis (session caching).
 - **External Integrations:** Open-Meteo APIs (Dynamic real-time marine and aviation forecasting dictating travel risk algorithms).
 - **Network Security:** Nginx handles CORS interception via `$http_origin` maps, dropping unauthorized `OPTIONS` requests natively to conserve Gunicorn worker cycles. Dedicated rate-limiting zones protect API routes.
@@ -91,6 +91,43 @@ The local development environment is strictly isolated from production infrastru
    - Backend API: `http://localhost:8000/api/`
    - PostgreSQL (Direct Inspection): `localhost:5432`
    - Redis (Direct Inspection): `localhost:6379`
+
+---
+
+### Alternative Manual Setup (Non-Docker)
+
+While the Docker Compose stack is the recommended approach to ensure parity with the containerized production environment, you can also run the application servers manually.
+
+> **⚠️ Note:**
+> Manual setup requires local installations of Python, Node.js. If you opt for this approach, the code is configured to fallback to SQLite and LocMemCache when db or caching services are absent or unreachable.
+
+**Note**
+
+**1. Start the Backend API:**
+Navigate to the backend directory, create a virtual environment, and install the required dependencies:
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt -r dev-requirements.txt
+```
+
+Ensure your local `.env` variables are configured, then apply migrations and start the server:
+
+```bash
+python manage.py migrate
+python manage.py runserver
+```
+
+**2. Start the Frontend SPA:**
+In a separate terminal instance, navigate to the frontend directory, install the Node modules, and start the development server:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 

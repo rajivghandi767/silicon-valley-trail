@@ -1,3 +1,6 @@
+from django.conf import settings
+import urllib.error
+import urllib.request
 import json
 from django.core.cache import cache
 from django.http import JsonResponse, HttpRequest
@@ -101,12 +104,53 @@ def restart_game(request: HttpRequest) -> JsonResponse:
 
 @require_http_methods(["POST"])
 def submit_report(request: HttpRequest) -> JsonResponse:
+    # 1. Define the translation map matching your frontend options
+    ISSUE_LABELS = {
+        "game_logic": "Game Logic / Math Error",
+        "ui_bug": "UI / Display Glitch",
+        "typo": "Typo / Spelling Error",
+        "other": "Other Exception"
+    }
+
     try:
         data = json.loads(request.body)
+        raw_issue_type = data.get("issue_type", "other")
+        user_note = data.get("user_note", "")
+
+        # 2. Get the verbose title (fallback to the raw key if it somehow misses)
+        verbose_issue = ISSUE_LABELS.get(raw_issue_type, raw_issue_type)
+
+        # 3. Save to the database
         ReportedIssue.objects.create(
-            issue_type=data.get("issue_type", "other"),
-            user_note=data.get("user_note", "")
+            issue_type=raw_issue_type,
+            user_note=user_note
         )
+
+        webhook_url = getattr(settings, 'DISCORD_WEBHOOK_URL', None)
+
+        if webhook_url:
+            payload = {
+                "content": f"🚨 **New Bug Report** 🚨\n**Type:** {verbose_issue}\n**Note:** {user_note}"
+            }
+
+            req = urllib.request.Request(
+                url=webhook_url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'SiliconValleyTrail/1.0'
+                },
+                method='POST'
+            )
+
+            try:
+                urllib.request.urlopen(req, timeout=3)
+            except urllib.error.URLError as e:
+                print(f"⚠️ [WEBHOOK ERROR] Failed to route to Discord: {e}")
+        else:
+            # 4. Print the verbose title locally
+            print(f"📄 [LOCAL LOG] Report saved: {verbose_issue} - {user_note}")
+
         return JsonResponse({"status": "success", "message": "Report saved."})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)

@@ -82,6 +82,7 @@ export function ReportModal() {
                     value={issueType}
                     onChange={(e) => setIssueType(e.target.value)}
                     className="modal-select"
+                    style={{ borderRadius: "4px" }}
                   >
                     <option value="game_logic">Game Logic / Math Error</option>
                     <option value="ui_bug">UI / Display Glitch</option>
@@ -98,6 +99,7 @@ export function ReportModal() {
                     onChange={(e) => setUserNote(e.target.value)}
                     className="modal-textarea"
                     placeholder="Describe the exception..."
+                    style={{ borderRadius: "4px" }}
                   />
                 </div>
 
@@ -105,20 +107,22 @@ export function ReportModal() {
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="restart-btn"
+                    className="action-btn"
                     style={{
                       borderColor: "var(--text-main)",
                       color: "var(--text-main)",
+                      flexDirection: "row", // Overrides the column stack for pure text
                     }}
                   >
-                    [ Cancel ]
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
                     className="action-btn"
+                    style={{ flexDirection: "row" }}
                   >
-                    {isSubmitting ? "[ Sending... ]" : "[ Submit ]"}
+                    {isSubmitting ? "Sending..." : "Submit"}
                   </button>
                 </div>
               </form>

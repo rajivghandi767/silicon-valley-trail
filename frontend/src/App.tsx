@@ -121,10 +121,8 @@ function App() {
 
         <div className="stat-block">
           <span className="stat-label">
-            <span className="hide-on-mobile">Days Remaining</span>
-            <span className="show-on-mobile" title="Days Remaining">
-              📅
-            </span>
+            <span className="stat-emoji">📅</span>
+            <span className="stat-text">Days</span>
           </span>
           <span
             className="stat-value"
@@ -141,10 +139,8 @@ function App() {
 
         <div className="stat-block">
           <span className="stat-label">
-            <span className="hide-on-mobile">Cash</span>
-            <span className="show-on-mobile" title="Cash">
-              💰
-            </span>
+            <span className="stat-emoji">💰</span>
+            <span className="stat-text">Cash</span>
           </span>
           <span
             className="stat-value"
@@ -161,10 +157,8 @@ function App() {
 
         <div className="stat-block">
           <span className="stat-label">
-            <span className="hide-on-mobile">Award Miles</span>
-            <span className="show-on-mobile" title="Award Miles">
-              ✈️
-            </span>
+            <span className="stat-emoji">✈️</span>
+            <span className="stat-text">Miles</span>
           </span>
           <span
             className="stat-value"
@@ -181,10 +175,8 @@ function App() {
 
         <div className="stat-block">
           <span className="stat-label">
-            <span className="hide-on-mobile">Morale</span>
-            <span className="show-on-mobile" title="Morale">
-              🎭
-            </span>
+            <span className="stat-emoji">🎭</span>
+            <span className="stat-text">Morale</span>
           </span>
           <span
             className="stat-value"
@@ -201,10 +193,8 @@ function App() {
 
         <div className="stat-block">
           <span className="stat-label">
-            <span className="hide-on-mobile">Bugs</span>
-            <span className="show-on-mobile" title="Bugs">
-              🐛
-            </span>
+            <span className="stat-emoji">🐛</span>
+            <span className="stat-text">Bugs</span>
           </span>
           <span
             className="stat-value"
@@ -251,7 +241,7 @@ function App() {
               title="Restart Game"
             >
               <span className="hide-on-mobile">[ Restart Game ]</span>
-              <span className="show-on-mobile">⏮️</span>
+              <span className="show-on-mobile">Restart</span>
             </button>
             <ProjectSwitcher />
           </div>
@@ -275,30 +265,24 @@ function App() {
               onClick={() => handleAction("code")}
               disabled={isLoading || isGameOver}
             >
-              <span className="hide-on-mobile">[ Write Code ]</span>
-              <span className="show-on-mobile" title="Write Code">
-                💻
-              </span>
+              <span className="btn-emoji">💻</span>
+              <span className="btn-text">Code</span>
             </button>
             <button
               className="action-btn"
               onClick={() => handleAction("mentor")}
               disabled={isLoading || isGameOver}
             >
-              <span className="hide-on-mobile">[ Mentor ]</span>
-              <span className="show-on-mobile" title="Mentor">
-                🤝
-              </span>
+              <span className="btn-emoji">🤝🏽</span>
+              <span className="btn-text">Mentor</span>
             </button>
             <button
               className="action-btn"
               onClick={() => handleAction("rest")}
               disabled={isLoading || isGameOver}
             >
-              <span className="hide-on-mobile">[ Rest ]</span>
-              <span className="show-on-mobile" title="Rest">
-                🛌
-              </span>
+              <span className="btn-emoji">🛌</span>
+              <span className="btn-text">Rest</span>
             </button>
 
             <div className="action-separator"></div>
@@ -308,20 +292,16 @@ function App() {
               onClick={() => handleAction("travel_ferry")}
               disabled={isLoading || isGameOver}
             >
-              <span className="hide-on-mobile">[ Ferry ]</span>
-              <span className="show-on-mobile" title="Ferry">
-                ⛴️
-              </span>
+              <span className="btn-emoji">⛴️</span>
+              <span className="btn-text">Take Ferry</span>
             </button>
             <button
               className="action-btn fly"
               onClick={() => handleAction("travel_flight")}
               disabled={isLoading || isGameOver}
             >
-              <span className="hide-on-mobile">[ Fly ]</span>
-              <span className="show-on-mobile" title="Fly">
-                ✈️
-              </span>
+              <span className="btn-emoji">✈️</span>
+              <span className="btn-text">Fly</span>
             </button>
           </div>
         </div>

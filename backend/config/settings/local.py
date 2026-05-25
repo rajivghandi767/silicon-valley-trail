@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY',
                        'django-insecure-local-testing-key-svt')
 
 ALLOWED_HOSTS = os.getenv(
-    'ALLOWED_HOSTS', 'localhost,127.0.0.1,backend').split(',')
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1,svt-backend').split(',')
 
 # ============================================================================
 # DEVELOPMENT-SPECIFIC APPS AND MIDDLEWARE
@@ -161,3 +161,8 @@ LOGGING = {
         },
     },
 }
+
+# ============================================================================
+# DISCORD WEBHOOK
+# ============================================================================
+DISCORD_WEBHOOK_URL = None
