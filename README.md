@@ -99,7 +99,7 @@ The local development environment is strictly isolated from production infrastru
 While the Docker Compose stack is the recommended approach to ensure parity with the containerized production environment, you can also run the application servers manually.
 
 > **⚠️ Note:**
-> Manual setup requires local installations of Python, Node.js. If you opt for this approach, the code is configured to fallback to SQLite and LocMemCache when db or caching services are absent or unreachable.
+> Manual setup requires local installations of Python, Node.js. If you opt for this approach, the code is configured to fallback to SQLite and LocMemCache.
 
 **Note**
 
@@ -117,6 +117,7 @@ Ensure your local `.env` variables are configured, then apply migrations and sta
 
 ```bash
 python manage.py migrate
+python manage.py load_islands
 python manage.py runserver
 ```
 
