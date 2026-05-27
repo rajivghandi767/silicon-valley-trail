@@ -87,14 +87,11 @@ services:
 
 volumes:
   svt_static:
-    name: svt_static
   svt_logs:
-    name: svt_logs
 
 networks:
   core:
     external: true
-  svt:
-    external: true
   database:
     external: true
+  svt:
