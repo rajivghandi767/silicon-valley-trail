@@ -77,8 +77,6 @@ services:
 
 volumes:
   svt-local-db-data:
-    name: svt-local-db-data
 
 networks:
   svt-local:
-    name: svt-local
