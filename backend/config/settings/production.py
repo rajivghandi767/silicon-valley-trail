@@ -1,12 +1,5 @@
 from .base import *
 import os
-from dotenv import load_dotenv
-
-# ============================================================================
-# LOAD ENV VARIABLES
-# ============================================================================
-env_path = BASE_DIR / '.env'
-load_dotenv(dotenv_path=env_path, override=True)
 
 # ============================================================================
 # PRODUCTION SECURITY & PROXY SETTINGS
