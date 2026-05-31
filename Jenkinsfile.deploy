@@ -5,7 +5,7 @@ pipeline {
 
     triggers {
         cron('''TZ=America/New_York
-20 1 * * *''')
+30 2 * * *''')
     }
 
     parameters {
