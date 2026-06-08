@@ -48,3 +48,34 @@ class ReportedIssue(models.Model):
         issue_display = dict(self.ISSUE_TYPES).get(
             self.issue_type, self.issue_type)
         return f"[{issue_display}] - {'Resolved' if self.resolved else 'Pending'}"
+
+    def send_notifications(self):
+        import json
+        import urllib.request
+        import urllib.error
+        from django.conf import settings
+
+        issue_display = dict(self.ISSUE_TYPES).get(self.issue_type, self.issue_type)
+        webhook_url = getattr(settings, 'DISCORD_WEBHOOK_URL', None)
+
+        if webhook_url:
+            payload = {
+                "content": f"🚨 **New Bug Report** 🚨\n**Type:** {issue_display}\n**Note:** {self.user_note}"
+            }
+            req = urllib.request.Request(
+                url=webhook_url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'SiliconValleyTrail/1.0'
+                },
+                method='POST'
+            )
+            try:
+                urllib.request.urlopen(req, timeout=3)
+                return True
+            except urllib.error.URLError as e:
+                print(f"⚠️ [WEBHOOK ERROR] Failed to route to Discord: {e}")
+        else:
+            print(f"📄 [LOCAL LOG] Report saved: {issue_display} - {self.user_note}")
+        return False
