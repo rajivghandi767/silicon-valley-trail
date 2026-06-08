@@ -95,7 +95,7 @@ function App() {
             <span className="stat-label">Location</span>
             <span
               className="stat-label"
-              style={{ opacity: 0.5, fontSize: "0.75rem" }}
+              style={{ opacity: 0.8, fontSize: "0.75rem" }}
             >
               STOP {gameState.sequence_in_journey} OF {gameState.total_stops}
             </span>
@@ -226,7 +226,7 @@ function App() {
         </div>
       </div>
 
-      <div className="main-window">
+      <main className="main-window">
         <div className="header">
           <h1 className="title">
             <span className="hide-on-mobile">
@@ -328,7 +328,7 @@ function App() {
 
           <ReportModal />
         </div>
-      </div>
+      </main>
     </div>
   );
 }
