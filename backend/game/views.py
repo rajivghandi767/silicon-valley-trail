@@ -120,36 +120,12 @@ def submit_report(request: HttpRequest) -> JsonResponse:
         # 2. Get the verbose title (fallback to the raw key if it somehow misses)
         verbose_issue = ISSUE_LABELS.get(raw_issue_type, raw_issue_type)
 
-        # 3. Save to the database
-        ReportedIssue.objects.create(
+        # 3. Save to the database and send notifications
+        issue = ReportedIssue.objects.create(
             issue_type=raw_issue_type,
             user_note=user_note
         )
-
-        webhook_url = getattr(settings, 'DISCORD_WEBHOOK_URL', None)
-
-        if webhook_url:
-            payload = {
-                "content": f"🚨 **New Bug Report** 🚨\n**Type:** {verbose_issue}\n**Note:** {user_note}"
-            }
-
-            req = urllib.request.Request(
-                url=webhook_url,
-                data=json.dumps(payload).encode('utf-8'),
-                headers={
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'SiliconValleyTrail/1.0'
-                },
-                method='POST'
-            )
-
-            try:
-                urllib.request.urlopen(req, timeout=3)
-            except urllib.error.URLError as e:
-                print(f"⚠️ [WEBHOOK ERROR] Failed to route to Discord: {e}")
-        else:
-            # 4. Print the verbose title locally
-            print(f"📄 [LOCAL LOG] Report saved: {verbose_issue} - {user_note}")
+        issue.send_notifications()
 
         return JsonResponse({"status": "success", "message": "Report saved."})
     except Exception as e:
