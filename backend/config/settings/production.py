@@ -90,7 +90,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/home/backend/django/logs/svt.log',
+            'filename': os.getenv('DJANGO_LOG_FILE', '/home/backend/django/logs/svt.log'),
             'formatter': 'verbose',
         },
         'error_file': {
@@ -123,7 +123,7 @@ LOGGING = {
 # ============================================================================
 PROMETHEUS_EXPORT_MIGRATIONS = False
 PROMETHEUS_LATENCY_BUCKETS = (
-    0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.024, 2.048, 4.096, 8.192, 16.384, 32.768, 65.536, 131.072, 262.144,
+    0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.024, 2.048, 4.096, 8.192, 16.384, float('inf')
 )
 
 # ============================================================================

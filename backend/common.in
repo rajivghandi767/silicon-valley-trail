@@ -7,5 +7,4 @@ django
 django-prometheus
 
 # Utilities
-python-dotenv
 django-redis
