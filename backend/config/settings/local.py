@@ -56,17 +56,7 @@ CSRF_COOKIE_HTTPONLY = False
 # DYNAMIC CONNECTION TESTER
 # ============================================================================
 
-
-def is_service_available(host, port, timeout=0.2):
-    """Attempts a socket connection to verify if a service is actually running."""
-    if not host or not port:
-        return False
-    try:
-        with socket.create_connection((host, int(port)), timeout=timeout):
-            return True
-    except (socket.timeout, ConnectionRefusedError, socket.gaierror, OSError):
-        return False
-
+from config.utils import is_service_available
 
 # ============================================================================
 # DATABASE FALLBACK LOGIC

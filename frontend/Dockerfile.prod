@@ -11,7 +11,7 @@ USER frontend
 
 # Copy package files and install dependencies
 COPY --chown=frontend:frontend_group package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 
 # Copy source code
 COPY --chown=frontend:frontend_group . .

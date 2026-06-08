@@ -97,8 +97,12 @@ pipeline {
                                     mkdir -p ~/.ssh
                                     ssh-keyscan -H ${env.DEPLOY_HOST} >> ~/.ssh/known_hosts || true
                                     
-                                    echo "📂 Ensuring remote directory exists..."
-                                    ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "mkdir -p ${env.DEPLOY_DIR}"
+                                    echo "📂 Ensuring remote directory exists & backing up existing env..."
+                                    ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "
+                                        mkdir -p ${env.DEPLOY_DIR} && \
+                                        cd ${env.DEPLOY_DIR} && \
+                                        cp .env .env.bak 2>/dev/null || true
+                                    "
 
                                     echo "📦 Syncing files to ${env.DEPLOY_HOST}..."
                                     scp docker-compose.prod.yml ${env.DEPLOY_USER}@${env.DEPLOY_HOST}:${env.DEPLOY_DIR}/docker-compose.yml
@@ -137,16 +141,34 @@ pipeline {
                                 }
 
                                 if (shouldDeploy) {
-                                    echo "🚀 Deploying..."
-                                    sh """
-                                        ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "
-                                            cd ${env.DEPLOY_DIR}
-                                            chmod 600 .env
-                                            IMAGE_TAG=${params.TAG_TO_DEPLOY} docker compose up -d --remove-orphans
-                                            docker image prune -f
-                                        "
-                                    """
-                                    env.DEPLOY_STATUS = "UPDATED"
+                                    echo "🚀 Deploying and checking container health..."
+                                    try {
+                                        sh """
+                                            ssh ${env.DEPLOY_USER}@${env.DEPLOY_HOST} "
+                                                cd ${env.DEPLOY_DIR}
+                                                chmod 600 .env
+                                                
+                                                # Run compose and wait for healthchecks to pass
+                                                if ! IMAGE_TAG=${params.TAG_TO_DEPLOY} docker compose up -d --wait --remove-orphans; then
+                                                    echo '🚨 Healthchecks failed! Reverting to last stable tag...'
+                                                    if [ -f .env.bak ]; then
+                                                        mv .env.bak .env
+                                                        # Re-deploy the last working version
+                                                        docker compose up -d --remove-orphans
+                                                    fi
+                                                    exit 1
+                                                fi
+                                                
+                                                # Deployment succeeded, clean up backup config
+                                                rm -f .env.bak
+                                                docker image prune -f
+                                            "
+                                        """
+                                        env.DEPLOY_STATUS = "UPDATED"
+                                    } catch (Exception e) {
+                                        echo "❌ Deployment failed and rollback was initiated."
+                                        throw e
+                                    }
                                 }
                                 
                                 // Logout from registry dynamically
