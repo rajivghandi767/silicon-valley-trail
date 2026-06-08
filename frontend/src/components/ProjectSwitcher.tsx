@@ -1,40 +1,10 @@
 import { useState, useRef, useEffect } from "react";
+import { usePortfolioData } from "../hooks/usePortfolioData";
 
-export interface ProjectData {
-  name: string;
-  url: string;
-  icon: string;
-  desc: string;
-}
+interface ProjectSwitcherProps {}
 
-const DEFAULT_PROJECTS: ProjectData[] = [
-  {
-    name: "Portfolio",
-    url: "https://rajivwallace.com",
-    icon: "👨🏾‍💻",
-    desc: "My professional journey",
-  },
-  {
-    name: "Country Trivia",
-    url: "https://trivia.rajivwallace.com",
-    icon: "🌍",
-    desc: "Geography CLI & Web",
-  },
-  {
-    name: "Prop & Ferry",
-    url: "https://prop-ferry.rajivwallace.com",
-    icon: "⛴️",
-    desc: "Caribbean hopping",
-  },
-];
-
-interface ProjectSwitcherProps {
-  projects?: ProjectData[];
-}
-
-export function ProjectSwitcher({
-  projects = DEFAULT_PROJECTS,
-}: ProjectSwitcherProps) {
+export function ProjectSwitcher(_props: ProjectSwitcherProps) {
+  const { projects } = usePortfolioData();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -99,16 +69,16 @@ export function ProjectSwitcher({
           </div>
           {projects.map((p) => (
             <a
-              key={p.name}
-              href={p.url}
+              key={p.title}
+              href={p.deployed_url}
               target="_blank"
               rel="noreferrer"
               className="switcher-item"
             >
-              <span style={{ fontSize: "1.5rem" }}>{p.icon}</span>
+              <span style={{ fontSize: "1.5rem" }}>{p.technology || "✨"}</span>
               <div>
-                <div className="switcher-title">{p.name}</div>
-                <div className="switcher-desc">{p.desc}</div>
+                <div className="switcher-title">{p.title}</div>
+                <div className="switcher-desc">{p.description}</div>
               </div>
             </a>
           ))}

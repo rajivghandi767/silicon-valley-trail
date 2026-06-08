@@ -4,9 +4,11 @@ import { GameState, GameAction } from "./types";
 import { ProjectSwitcher } from "./components/ProjectSwitcher";
 import { ReportModal } from "./components/ReportModal";
 import { WARNING_THRESHOLDS } from "./constants";
+import { usePortfolioData } from "./hooks/usePortfolioData";
 import "./index.css";
 
 function App() {
+  const { info } = usePortfolioData();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -316,14 +318,14 @@ function App() {
           </span>
           <span className="footer-links">
             <a
-              href="https://github.com/rajivghandi767"
+              href={info?.github_url || "https://github.com/rajivghandi767"}
               target="_blank"
               rel="noreferrer"
             >
               GitHub
             </a>
             <span style={{ margin: "0 0.5rem" }}>|</span>
-            <a href="mailto:dev@rajivwallace.com">dev@rajivwallace.com</a>
+            <a href={`mailto:${info?.email || "dev@rajivwallace.com"}`}>{info?.email || "dev@rajivwallace.com"}</a>
           </span>
 
           <ReportModal />
