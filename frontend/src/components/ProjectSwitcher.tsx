@@ -76,7 +76,7 @@ export function ProjectSwitcher(_props: ProjectSwitcherProps) {
               className="switcher-item"
             >
               <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-sm bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-gray-300`}
+                  className="w-8 flex-shrink-0 flex items-start justify-start text-xl pt-0.5 text-gray-700 dark:text-gray-300"
                 >
                   {p.emoji || (p.technology ? p.technology.substring(0, 2).toUpperCase() : "✨")}
                 </div>
