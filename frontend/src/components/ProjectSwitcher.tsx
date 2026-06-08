@@ -75,7 +75,11 @@ export function ProjectSwitcher(_props: ProjectSwitcherProps) {
               rel="noreferrer"
               className="switcher-item"
             >
-              <span style={{ fontSize: "1.5rem" }}>{p.technology || "✨"}</span>
+              <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-sm ${p.color || 'bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-gray-300'}`}
+                >
+                  {p.emoji || (p.technology ? p.technology.substring(0, 2).toUpperCase() : "✨")}
+                </div>
               <div>
                 <div className="switcher-title">{p.title}</div>
                 <div className="switcher-desc">{p.description}</div>
