@@ -60,27 +60,24 @@ The local development environment is strictly isolated from production infrastru
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- Git
+**For Docker Setup (Recommended):**
+- 🐳 Docker & Docker Compose
+
+**For Manual Setup:**
+- 🐍 Python 3.x
+- 🟢 Node.js & npm
 
 ### Installation
 
 1. **Clone the repository:**
 
    ```bash
-   git clone [https://github.com/rajivghandi767/silicon-valley-trail.git](https://github.com/rajivghandi767/silicon-valley-trail.git)
+   git clone https://github.com/rajivghandi767/silicon-valley-trail.git
    cd silicon-valley-trail
    ```
 
-2. **Configure Environment Variables:**
-   Copy the example `.env` file. The defaults are pre-configured to automatically route the frontend, backend, PostgreSQL, and Redis containers over a custom local Docker network out-of-the-box.
-
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Spin up the stack:**
-   This command will build the containers, run database migrations, load narrative seed data, and start the local servers.
+2. **Spin up the stack:**
+   This command will build the containers, run database migrations, load narrative seed data, and start the local servers. No `.env` configuration is required as the `docker-compose.yml` natively utilizes `.env.example`.
 
    ```bash
    docker compose up --build -d
