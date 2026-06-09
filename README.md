@@ -50,7 +50,7 @@ Deployments are fully automated via Jenkins Multibranch Pipelines (`Jenkinsfile`
 
 1. **Build & Tag:** Jenkins tests the codebase, builds the `backend`, `frontend`, and `nginx` Docker images, and pushes them to the GitHub Container Registry (ghcr.io) tagged with the exact Git commit hash.
 2. **Secret Injection:** The pipeline authenticates dynamically with **HashiCorp Vault** to securely pull and inject environment variables into the host agent.
-3. **Orchestration:** A remote SSH command pulls the latest images and executes zero-downtime updates via Docker Compose.
+3. **Orchestration:** A remote SSH command pulls the latest images and executes zero-downtime updates via Docker Compose. Scheduled deployments also run daily at `02:30 AM` EST.
 
 ---
 
