@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - svt-local-db-data:/var/lib/postgresql/data
+      - svt-local-db-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U svt_user -d svt_db"]
       interval: 5s
