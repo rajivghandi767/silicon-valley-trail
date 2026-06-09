@@ -62,7 +62,7 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'None'
 
 # Session configuration (Strictly HttpOnly)
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_HTTPONLY = True
