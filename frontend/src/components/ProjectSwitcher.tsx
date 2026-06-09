@@ -86,6 +86,16 @@ export function ProjectSwitcher(_props: ProjectSwitcherProps) {
               </div>
             </a>
           ))}
+          <div className="p-2 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900 text-center">
+            <a
+              href="https://github.com/rajivghandi767"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-medium text-brand-light dark:text-brand-dark hover:underline"
+            >
+              View GitHub Repo →
+            </a>
+          </div>
         </div>
       )}
     </div>
