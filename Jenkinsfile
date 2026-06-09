@@ -54,7 +54,7 @@ pipeline {
                 stage('Test Frontend (React)') {
                     steps {
                         sh '''
-                            docker build -t svt-frontend:test -f frontend/Dockerfile.dev ./frontend
+                            docker build -t svt-frontend:test -f frontend/Dockerfile ./frontend
                             docker run --rm svt-frontend:test npm run test
                         '''
                     }
