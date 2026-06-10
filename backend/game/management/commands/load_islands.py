@@ -1,6 +1,7 @@
 # backend/game/management/commands/load_islands.py
 from django.core.management.base import BaseCommand
 from game.models import Location
+from django.core.cache import cache
 
 
 class Command(BaseCommand):
@@ -91,3 +92,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Successfully loaded {len(list_of_stops)} islands/stops to the database via bulk_create.'
         ))
+        
+        # Clear cache to ensure updated locations reflect
+        cache.clear()
+        self.stdout.write(self.style.SUCCESS('Cleared Redis cache.'))
