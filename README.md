@@ -23,7 +23,7 @@ Originally developed as a time-boxed submission for the **LinkedIn REACH Apprent
 
 Following a technical pair-programming session, this codebase underwent a comprehensive architectural overhaul to transition from a local prototype to a scalable, production-ready application:
 
-- **Redis Game Session Caching:** Transitioned temporary game state management to Redis caching. This decouples dynamic session data from the relational database, significantly reducing disk I/O and optimizing read/write speeds during the core game loop.
+- **Redis Game Session Caching:** Transitioned temporary game state management to Redis caching, completely bypassing SQL row contention (see Technical Architecture below).
 - **Separation of Concerns ("Fat Models, Skinny Views"):** Decoupled the monolithic `views.py`. Complex external API logic (weather routing) is now abstracted into a dedicated `services` layer, and state mutations are handled by an isolated `engine`.
 - **Security Hardening:** Removed the development-phase `@csrf_exempt` decorators. The application now executes a full CSRF handshake between the React SPA and Django via `@ensure_csrf_cookie` and strict `X-CSRFToken` header validation.
 - **Database Modernization:** Migrated the data layer from SQLite to a dedicated, containerized PostgreSQL instance to support highly concurrent transactions.
