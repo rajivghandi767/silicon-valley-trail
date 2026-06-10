@@ -1,6 +1,4 @@
-from django.conf import settings
-import urllib.error
-import urllib.request
+
 import json
 from django.core.cache import cache
 from django.http import JsonResponse, HttpRequest
@@ -11,6 +9,8 @@ from .models import ReportedIssue
 from .engine.constants import INTRO_MESSAGE, REBOOT_MESSAGE, VICTORY_MESSAGE, SESSION_RESTORED_MESSAGE
 from .engine.state import CacheGameState
 from .engine.actions import process_turn
+
+GAME_SESSION_TTL = 86400
 
 
 def get_session_cache_key(request: HttpRequest) -> str:
@@ -30,7 +30,7 @@ def get_state(request: HttpRequest) -> JsonResponse:
     # Auto-initialize a new game if one isn't found instead of throwing a 404
     if not game:
         game = CacheGameState(current_location_id=1)
-        cache.set(cache_key, game, timeout=86400)
+        cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
 
         response_data = game.serialize_for_api()
         response_data["message"] = INTRO_MESSAGE
@@ -74,7 +74,7 @@ def take_action(request: HttpRequest) -> JsonResponse:
 
         # Apply bounds and save to Redis
         game.apply_boundaries()
-        cache.set(cache_key, game, timeout=86400)
+        cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
 
         if game.is_won:
             turn_message = VICTORY_MESSAGE.format(
@@ -95,7 +95,7 @@ def restart_game(request: HttpRequest) -> JsonResponse:
     cache_key = get_session_cache_key(request)
 
     new_game = CacheGameState(current_location_id=1)
-    cache.set(cache_key, new_game, timeout=86400)
+    cache.set(cache_key, new_game, timeout=GAME_SESSION_TTL)
 
     response_data = new_game.serialize_for_api()
     response_data["message"] = REBOOT_MESSAGE
@@ -117,8 +117,7 @@ def submit_report(request: HttpRequest) -> JsonResponse:
         raw_issue_type = data.get("issue_type", "other")
         user_note = data.get("user_note", "")
 
-        # 2. Get the verbose title (fallback to the raw key if it somehow misses)
-        verbose_issue = ISSUE_LABELS.get(raw_issue_type, raw_issue_type)
+
 
         # 3. Save to the database and send notifications
         issue = ReportedIssue.objects.create(
