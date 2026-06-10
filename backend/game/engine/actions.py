@@ -35,7 +35,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
     error: Optional[str] = None
     next_location: Optional[Location] = None
 
-    # 1. API BOUNDARY VALIDATION
+    # API Boundary Validation
     try:
         action = GameAction(raw_action)
     except ValueError:
@@ -43,7 +43,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
         error = f"Invalid/unknown action. Please select from: {valid_actions_str}."
         return turn_message, error
 
-    # 2. ACTION ROUTING (Structural Pattern Matching)
+    # Action routing via structural pattern matching
     match action:
 
         # STATIONARY ACTIONS
@@ -101,7 +101,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
                         turn_message += TRAVEL_MESSAGES['flight_smooth'].format(
                             location_name=next_location.name)
 
-    # 3. APPLY POST-TRAVEL EVENTS
+    # Evaluate post-travel destination effects
     if successful_travel and next_location:
 
         # Dynamically determine the final stop
@@ -110,7 +110,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
         # Only process rewards and events if we are NOT at the final stop
         if next_location.sequence_in_journey < total_stops:
 
-            # 1. Apply resource rewards and messages
+            # Evaluate intrinsic destination rewards
             if next_location.reward_resource and hasattr(game, next_location.reward_resource):
                 current_resource = getattr(game, next_location.reward_resource)
                 setattr(game, next_location.reward_resource,
@@ -119,7 +119,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
                 if next_location.reward_message:
                     turn_message += f"\n\n> Destination Arrival: {next_location.reward_message}"
 
-            # 2. Trigger random events
+            # Evaluate probabilistic events
             event_message = trigger_random_event(game, next_location.name)
             if event_message:
                 turn_message += f"\n\n> {event_message}"
