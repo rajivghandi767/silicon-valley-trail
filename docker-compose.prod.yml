@@ -97,3 +97,4 @@ networks:
   database:
     external: true
   svt:
+    name: svt
