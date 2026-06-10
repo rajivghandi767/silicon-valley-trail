@@ -1,4 +1,5 @@
 from typing import Tuple, Optional, Dict, Any
+from django.core.cache import cache
 
 from ..models import Location
 from ..services.weather import check_marine_conditions, check_aviation_conditions
@@ -52,8 +53,10 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
 
         # TRAVEL ACTIONS
         case a if a in TRAVEL_ACTIONS:
-            next_location = Location.objects.filter(
-                sequence_in_journey=game.current_location_id + 1).first()
+            next_seq = game.current_location_id + 1
+            def fetch_next_loc():
+                return Location.objects.filter(sequence_in_journey=next_seq).first()
+            next_location = cache.get_or_set(f'svt_location_{next_seq}', fetch_next_loc, timeout=None)
 
             if not next_location:
                 return turn_message, TRAVEL_MESSAGES['error_no_location']
@@ -102,7 +105,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
     if successful_travel and next_location:
 
         # Dynamically determine the final stop
-        total_stops = Location.objects.count()
+        total_stops = cache.get_or_set('svt_total_stops', Location.objects.count, timeout=None)
 
         # Only process rewards and events if we are NOT at the final stop
         if next_location.sequence_in_journey < total_stops:

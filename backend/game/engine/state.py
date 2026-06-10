@@ -1,4 +1,5 @@
 # backend/game/engine/state.py
+from django.core.cache import cache
 from ..models import Location
 from .constants import STATUS_WON, STATUS_LOST, STATUS_ACTIVE, DEFEAT_MESSAGES
 
@@ -15,7 +16,7 @@ class CacheGameState:
     @property
     def total_stops(self):
         """Dynamically fetch the max number of stops from the database"""
-        return Location.objects.count()
+        return cache.get_or_set('svt_total_stops', Location.objects.count, timeout=None)
 
     @property
     def is_lost(self):
@@ -53,8 +54,9 @@ class CacheGameState:
         return "SYSTEM FAILURE."
 
     def serialize_for_api(self):
-        location = Location.objects.filter(
-            sequence_in_journey=self.current_location_id).first()
+        def fetch_loc():
+            return Location.objects.filter(sequence_in_journey=self.current_location_id).first()
+        location = cache.get_or_set(f'svt_location_{self.current_location_id}', fetch_loc, timeout=None)
 
         format_kwargs = {
             "location_name": location.name if location else "Unknown",
