@@ -14,7 +14,14 @@ GAME_SESSION_TTL = 86400
 
 
 def get_session_cache_key(request: HttpRequest) -> str:
-    """Retrieves or provisions a tracking key tied to the Django session."""
+    """
+    Retrieves or provisions a tracking key tied to the Django session.
+    
+    This key is used to map a user's web session directly to their active CacheGameState
+    object serialized in Redis. By decoupling the active game state from the SQL database 
+    entirely, we enable sub-millisecond state retrievals and updates, completely eliminating
+    database row contention during concurrent gameplay.
+    """
     if not request.session.session_key:
         request.session.create()
         request.session['initialized'] = True
