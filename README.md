@@ -36,6 +36,14 @@ Following a technical pair-programming session, this codebase underwent a compre
 
 This application utilizes a strict **"Smart Server / Dumb Client"** architecture. Production is self-hosted on a bare-metal **Raspberry Pi 4B 8GB RAM** running a headless Debian distro (DietPi). To ensure strict environmental segregation and security, the network infrastructure is managed via **Ubiquiti UniFi** hardware, utilizing custom VLANs, VPNs, and firewall rules to safely sandbox traffic before routing through Cloudflare.
 
+### Technical Architecture & Game Engine
+
+Traditional text-based games heavily rely on SQL database row-locking to maintain session state. To adhere to modern stateless web architecture best practices and maximize throughput, SVT utilizes a **Decoupled Memory-First Architecture**:
+
+- **Sub-Millisecond State Retrieval:** Active gameplay sessions (`CacheGameState`) are exclusively serialized and stored in Redis. This completely eliminates SQL row contention and allows the engine to process concurrent player actions instantly.
+- **Static Payload Caching:** Map locations and mathematical boundaries (e.g., total stops) are cached indefinitely upon initialization. The Django engine accesses this data in `O(1)` time, completely bypassing repetitive `SELECT COUNT(*)` queries.
+- **Session Expiry:** Inactive gameplay sessions are automatically swept from memory after 24 hours, ensuring the server's RAM footprint remains minimal regardless of user volume.
+
 ### Backend Pipeline & Integrations
 
 - **Engine:** Python / Django APIs. The backend utilizes an RPC-style (Action-Oriented) architecture rather than strict REST. Endpoints like /api/action/ and /api/state/ directly mutate the game's internal state machine, providing a much cleaner structure for turn-based gameplay loops.
