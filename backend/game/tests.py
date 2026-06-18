@@ -105,3 +105,30 @@ class GameMechanicsTests(TestCase):
         data = json.loads(response.content)
         self.assertEqual(response.status_code, 400)
         self.assertIn("The game has ended", data.get("error", ""))
+
+    @patch('game.engine.actions.check_aviation_conditions')
+    @patch('game.engine.events.random.choices')
+    def test_victory_condition(self, mock_choices, mock_weather) -> None:
+        mock_weather.return_value = (False, False)
+        mock_choices.return_value = [{"impacts": {}, "text": "Mocked Event"}]
+
+        self.location9 = Location.objects.create(
+            name="San Juan", description="Stop 9.", sequence_in_journey=9, latitude=18.46, longitude=-66.10
+        )
+        self.game.current_location_id = 9
+        cache.set(self.cache_key, self.game, timeout=86400)
+
+        response = self.client.post(
+            reverse('take_action'),
+            data=json.dumps({"action": "travel_flight"}),
+            content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        updated_game = cache.get(self.cache_key)
+
+        self.assertTrue(updated_game.is_won)
+        
+        data = json.loads(response.content)
+        self.assertIn("VICTORY", data.get("message", ""))
+        self.assertIn("Dominica", data.get("message", ""))
