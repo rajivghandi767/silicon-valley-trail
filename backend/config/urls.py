@@ -1,10 +1,8 @@
-from django.contrib import admin
 from django.urls import path, include
 
 from health_check.views import health_detailed, health_simple
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('api/', include('game.urls')),
     # Health Check Endpoints
     path('health/', health_simple, name='health_simple'),
