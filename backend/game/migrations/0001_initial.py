@@ -5,38 +5,104 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Location',
+            name="Location",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text='The name of the island/stop along the journey.', max_length=255)),
-                ('description', models.TextField(help_text='A brief description/fun fact about the island/stop.')),
-                ('sequence_in_journey', models.IntegerField(help_text='The order of the stop along the journey. (Eg. 1=New York (First Stop), 10=Dominica (10th & Last Stop))', unique=True)),
-                ('latitude', models.FloatField(default=0.0)),
-                ('longitude', models.FloatField(default=0.0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="The name of the island/stop along the journey.",
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        help_text="A brief description/fun fact about the island/stop."
+                    ),
+                ),
+                (
+                    "sequence_in_journey",
+                    models.IntegerField(
+                        help_text="The order of the stop along the journey. (Eg. 1=New York (First Stop), 10=Dominica (10th & Last Stop))",
+                        unique=True,
+                    ),
+                ),
+                ("latitude", models.FloatField(default=0.0)),
+                ("longitude", models.FloatField(default=0.0)),
             ],
             options={
-                'ordering': ['sequence_in_journey'],
+                "ordering": ["sequence_in_journey"],
             },
         ),
         migrations.CreateModel(
-            name='GameState',
+            name="GameState",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('session_key', models.CharField(max_length=40, unique=True)),
-                ('cash', models.IntegerField(default=2500, help_text='Cash available for ferry rides. Running out of cash before final stop results in a loss.')),
-                ('award_miles', models.IntegerField(default=8000, help_text='Miles available for taking flights. Running out of miles before final stop results in a loss.')),
-                ('morale', models.IntegerField(default=100, help_text='Player health. Reaching 0 results in a loss. Can be affected by random events and challenges at each stop.')),
-                ('bugs', models.IntegerField(default=0, help_text='Codebase stability. Reaching 50 results in a loss. Can be affected by random events and challenges at each stop.')),
-                ('days_remaining', models.IntegerField(default=18, help_text='Number of days left to complete the journey. Reaching 0 results in a loss. Each move consumes days, and certain events can also affect this.')),
-                ('current_location', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='game.location')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("session_key", models.CharField(max_length=40, unique=True)),
+                (
+                    "cash",
+                    models.IntegerField(
+                        default=2500,
+                        help_text="Cash available for ferry rides. Running out of cash before final stop results in a loss.",
+                    ),
+                ),
+                (
+                    "award_miles",
+                    models.IntegerField(
+                        default=8000,
+                        help_text="Miles available for taking flights. Running out of miles before final stop results in a loss.",
+                    ),
+                ),
+                (
+                    "morale",
+                    models.IntegerField(
+                        default=100,
+                        help_text="Player health. Reaching 0 results in a loss. Can be affected by random events and challenges at each stop.",
+                    ),
+                ),
+                (
+                    "bugs",
+                    models.IntegerField(
+                        default=0,
+                        help_text="Codebase stability. Reaching 50 results in a loss. Can be affected by random events and challenges at each stop.",
+                    ),
+                ),
+                (
+                    "days_remaining",
+                    models.IntegerField(
+                        default=18,
+                        help_text="Number of days left to complete the journey. Reaching 0 results in a loss. Each move consumes days, and certain events can also affect this.",
+                    ),
+                ),
+                (
+                    "current_location",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="game.location"
+                    ),
+                ),
             ],
         ),
     ]

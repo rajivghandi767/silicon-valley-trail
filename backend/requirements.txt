@@ -11,6 +11,5 @@ gunicorn==25.3.0
 packaging==26.2
 prometheus-client==0.25.0
 psycopg==3.3.4
-python-dotenv==1.2.2
 redis==7.4.0
 sqlparse==0.5.5
