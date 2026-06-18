@@ -5,7 +5,15 @@ from .constants import STATUS_WON, STATUS_LOST, STATUS_ACTIVE, DEFEAT_MESSAGES
 
 
 class CacheGameState:
-    def __init__(self, current_location_id, cash=2500, award_miles=8000, morale=100, bugs=0, days_remaining=18):
+    def __init__(
+        self,
+        current_location_id,
+        cash=2500,
+        award_miles=8000,
+        morale=100,
+        bugs=0,
+        days_remaining=18,
+    ):
         self.current_location_id = current_location_id
         self.cash = cash
         self.award_miles = award_miles
@@ -17,12 +25,12 @@ class CacheGameState:
     def total_stops(self):
         """
         Dynamically fetches the total number of map locations from the database.
-        
+
         Because the total number of stops dictates win/loss boundary conditions, we cache this
-        value indefinitely using Redis. This eliminates a recurrent `SELECT COUNT(*)` 
+        value indefinitely using Redis. This eliminates a recurrent `SELECT COUNT(*)`
         query from executing on every single player action.
         """
-        return cache.get_or_set('svt_total_stops', Location.objects.count, timeout=None)
+        return cache.get_or_set("svt_total_stops", Location.objects.count, timeout=None)
 
     @property
     def is_lost(self):
@@ -62,14 +70,20 @@ class CacheGameState:
     def serialize_for_api(self):
         """
         Prepares the current game state to be returned to the React frontend.
-        
+
         Fetches the current Location object for descriptions/names. To prevent a database
         lookup on every user interaction (e.g., resting, coding, traveling), we heavily cache
         the individual Location objects indefinitely.
         """
+
         def fetch_loc():
-            return Location.objects.filter(sequence_in_journey=self.current_location_id).first()
-        location = cache.get_or_set(f'svt_location_{self.current_location_id}', fetch_loc, timeout=None)
+            return Location.objects.filter(
+                sequence_in_journey=self.current_location_id
+            ).first()
+
+        location = cache.get_or_set(
+            f"svt_location_{self.current_location_id}", fetch_loc, timeout=None
+        )
 
         format_kwargs = {
             "location_name": location.name if location else "Unknown",
@@ -77,7 +91,7 @@ class CacheGameState:
             "award_miles": self.award_miles,
             "morale": self.morale,
             "bugs": self.bugs,
-            "days_remaining": self.days_remaining
+            "days_remaining": self.days_remaining,
         }
 
         if self.is_won:

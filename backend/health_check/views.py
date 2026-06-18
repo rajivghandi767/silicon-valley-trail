@@ -17,7 +17,7 @@ def health_detailed(request):
         "status": "healthy",
         "timestamp": time.time(),
         "service": "svt-backend",
-        "checks": {}
+        "checks": {},
     }
 
     overall_status = 200
@@ -29,21 +29,21 @@ def health_detailed(request):
             cursor.fetchone()
         health_data["checks"]["database"] = {"status": "healthy"}
     except Exception as e:
-        health_data["checks"]["database"] = {
-            "status": "unhealthy", "error": str(e)}
+        health_data["checks"]["database"] = {"status": "unhealthy", "error": str(e)}
         overall_status = 503
 
     # Static files check
     try:
-        static_root = getattr(settings, 'STATIC_ROOT', None)
+        static_root = getattr(settings, "STATIC_ROOT", None)
         if static_root and os.path.exists(static_root):
             health_data["checks"]["static_files"] = {"status": "healthy"}
         else:
             health_data["checks"]["static_files"] = {
-                "status": "warning", "message": "static files not found"}
+                "status": "warning",
+                "message": "static files not found",
+            }
     except Exception as e:
-        health_data["checks"]["static_files"] = {
-            "status": "unhealthy", "error": str(e)}
+        health_data["checks"]["static_files"] = {"status": "unhealthy", "error": str(e)}
 
     # Set overall status
     if overall_status != 200:

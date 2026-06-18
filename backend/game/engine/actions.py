@@ -11,7 +11,7 @@ from .constants import (
     STATIONARY_ACTION_IMPACTS,
     TRAVEL_IMPACTS,
     ACTION_BASE_MESSAGES,
-    TRAVEL_MESSAGES
+    TRAVEL_MESSAGES,
 )
 
 
@@ -45,7 +45,6 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
 
     # Action routing via structural pattern matching
     match action:
-
         # STATIONARY ACTIONS
         case a if a in STATIONARY_ACTIONS:
             apply_impacts(game, STATIONARY_ACTION_IMPACTS[a])
@@ -54,70 +53,87 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
         # TRAVEL ACTIONS
         case a if a in TRAVEL_ACTIONS:
             next_seq = game.current_location_id + 1
+
             def fetch_next_loc():
                 return Location.objects.filter(sequence_in_journey=next_seq).first()
-            next_location = cache.get_or_set(f'svt_location_{next_seq}', fetch_next_loc, timeout=None)
+
+            next_location = cache.get_or_set(
+                f"svt_location_{next_seq}", fetch_next_loc, timeout=None
+            )
 
             if not next_location:
-                return turn_message, TRAVEL_MESSAGES['error_no_location']
+                return turn_message, TRAVEL_MESSAGES["error_no_location"]
 
             if a == GameAction.FERRY:
                 is_rough_seas, wave_height = check_marine_conditions(
-                    next_location.latitude, next_location.longitude)
-                turn_message += TRAVEL_MESSAGES['ferry_sea_conditions'].format(
-                    wave_height=wave_height)
+                    next_location.latitude, next_location.longitude
+                )
+                turn_message += TRAVEL_MESSAGES["ferry_sea_conditions"].format(
+                    wave_height=wave_height
+                )
 
                 if is_rough_seas:
-                    apply_impacts(game, TRAVEL_IMPACTS['ferry_grounded'])
-                    turn_message += TRAVEL_MESSAGES['ferry_grounded']
+                    apply_impacts(game, TRAVEL_IMPACTS["ferry_grounded"])
+                    turn_message += TRAVEL_MESSAGES["ferry_grounded"]
                 else:
-                    apply_impacts(game, TRAVEL_IMPACTS['ferry_success'])
+                    apply_impacts(game, TRAVEL_IMPACTS["ferry_success"])
                     game.current_location_id = next_location.sequence_in_journey
                     successful_travel = True
-                    turn_message += TRAVEL_MESSAGES['ferry_success'].format(
-                        location_name=next_location.name)
+                    turn_message += TRAVEL_MESSAGES["ferry_success"].format(
+                        location_name=next_location.name
+                    )
 
             elif a == GameAction.FLIGHT:
-                if game.award_miles < TRAVEL_IMPACTS['flight_cost_threshold']:
-                    return turn_message, TRAVEL_MESSAGES['flight_insufficient_miles']
+                if game.award_miles < TRAVEL_IMPACTS["flight_cost_threshold"]:
+                    return turn_message, TRAVEL_MESSAGES["flight_insufficient_miles"]
 
                 is_thunderstorm, is_turbulent = check_aviation_conditions(
-                    next_location.latitude, next_location.longitude)
+                    next_location.latitude, next_location.longitude
+                )
 
                 if is_thunderstorm:
-                    apply_impacts(game, TRAVEL_IMPACTS['flight_grounded'])
-                    turn_message += TRAVEL_MESSAGES['flight_grounded']
+                    apply_impacts(game, TRAVEL_IMPACTS["flight_grounded"])
+                    turn_message += TRAVEL_MESSAGES["flight_grounded"]
                 else:
-                    apply_impacts(game, TRAVEL_IMPACTS['flight_cost'])
+                    apply_impacts(game, TRAVEL_IMPACTS["flight_cost"])
                     game.current_location_id = next_location.sequence_in_journey
                     successful_travel = True
 
                     if is_turbulent:
-                        apply_impacts(game, TRAVEL_IMPACTS['flight_turbulent'])
-                        turn_message += TRAVEL_MESSAGES['flight_turbulent'].format(
-                            location_name=next_location.name)
+                        apply_impacts(game, TRAVEL_IMPACTS["flight_turbulent"])
+                        turn_message += TRAVEL_MESSAGES["flight_turbulent"].format(
+                            location_name=next_location.name
+                        )
                     else:
-                        apply_impacts(game, TRAVEL_IMPACTS['flight_smooth'])
-                        turn_message += TRAVEL_MESSAGES['flight_smooth'].format(
-                            location_name=next_location.name)
+                        apply_impacts(game, TRAVEL_IMPACTS["flight_smooth"])
+                        turn_message += TRAVEL_MESSAGES["flight_smooth"].format(
+                            location_name=next_location.name
+                        )
 
     # Evaluate post-travel destination effects
     if successful_travel and next_location:
-
         # Dynamically determine the final stop
-        total_stops = cache.get_or_set('svt_total_stops', Location.objects.count, timeout=None)
+        total_stops = cache.get_or_set(
+            "svt_total_stops", Location.objects.count, timeout=None
+        )
 
         # Only process rewards and events if we are NOT at the final stop
         if next_location.sequence_in_journey < total_stops:
-
             # Evaluate intrinsic destination rewards
-            if next_location.reward_resource and hasattr(game, next_location.reward_resource):
+            if next_location.reward_resource and hasattr(
+                game, next_location.reward_resource
+            ):
                 current_resource = getattr(game, next_location.reward_resource)
-                setattr(game, next_location.reward_resource,
-                        current_resource + next_location.reward_amount)
+                setattr(
+                    game,
+                    next_location.reward_resource,
+                    current_resource + next_location.reward_amount,
+                )
 
                 if next_location.reward_message:
-                    turn_message += f"\n\n> Destination Arrival: {next_location.reward_message}"
+                    turn_message += (
+                        f"\n\n> Destination Arrival: {next_location.reward_message}"
+                    )
 
             # Evaluate probabilistic events
             event_message = trigger_random_event(game, next_location.name)

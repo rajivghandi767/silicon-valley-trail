@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class HealthCheckConfig(AppConfig):
-    name = 'health_check'
+    name = "health_check"

@@ -4,20 +4,38 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('game', '0002_delete_gamestate'),
+        ("game", "0002_delete_gamestate"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ReportedIssue',
+            name="ReportedIssue",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('issue_type', models.CharField(choices=[('game_logic', 'Game Logic / Math Error'), ('ui_bug', 'UI / Display Glitch'), ('typo', 'Typo / Spelling Error'), ('other', 'Other Exception')], max_length=50)),
-                ('user_note', models.TextField()),
-                ('resolved', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "issue_type",
+                    models.CharField(
+                        choices=[
+                            ("game_logic", "Game Logic / Math Error"),
+                            ("ui_bug", "UI / Display Glitch"),
+                            ("typo", "Typo / Spelling Error"),
+                            ("other", "Other Exception"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                ("user_note", models.TextField()),
+                ("resolved", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]

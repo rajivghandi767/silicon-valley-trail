@@ -4,30 +4,41 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('game', '0003_reportedissue'),
+        ("game", "0003_reportedissue"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='location',
-            name='reward_amount',
+            model_name="location",
+            name="reward_amount",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='location',
-            name='reward_message',
+            model_name="location",
+            name="reward_message",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='location',
-            name='reward_resource',
-            field=models.CharField(blank=True, choices=[('morale', 'Morale'), ('cash', 'Cash'), ('award_miles', 'Award Miles'), ('bugs', 'Bugs (Reduction)')], max_length=50, null=True),
+            model_name="location",
+            name="reward_resource",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("morale", "Morale"),
+                    ("cash", "Cash"),
+                    ("award_miles", "Award Miles"),
+                    ("bugs", "Bugs (Reduction)"),
+                ],
+                max_length=50,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='location',
-            name='sequence_in_journey',
-            field=models.IntegerField(help_text='Order of the stop (1=NYC, 10=Dominica)', unique=True),
+            model_name="location",
+            name="sequence_in_journey",
+            field=models.IntegerField(
+                help_text="Order of the stop (1=NYC, 10=Dominica)", unique=True
+            ),
         ),
     ]

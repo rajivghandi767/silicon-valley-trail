@@ -17,8 +17,7 @@ def trigger_random_event(game: Any, location_name: str) -> str:
             weight += 10
         calculated_weights.append(weight)
 
-    selected_event = random.choices(
-        RANDOM_EVENTS, weights=calculated_weights, k=1)[0]
+    selected_event = random.choices(RANDOM_EVENTS, weights=calculated_weights, k=1)[0]
 
     for stat, change_value in selected_event.get("impacts", {}).items():
         if hasattr(game, stat):
