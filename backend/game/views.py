@@ -46,8 +46,9 @@ def get_state(request: HttpRequest) -> JsonResponse:
     response_data = game.serialize_for_api()
 
     if game.is_won:
+        location_name = response_data.get('current_location', 'UNKNOWN')
         display_message = VICTORY_MESSAGE.format(
-            days=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs
+            location_name=location_name, days_remaining=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs
         )
     else:
         location_name = response_data.get('current_location', 'UNKNOWN')
@@ -84,8 +85,10 @@ def take_action(request: HttpRequest) -> JsonResponse:
         cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
 
         if game.is_won:
+            temp_response = game.serialize_for_api()
             turn_message = VICTORY_MESSAGE.format(
-                days=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs)
+                location_name=temp_response.get('current_location', 'UNKNOWN'),
+                days_remaining=game.days_remaining, cash=game.cash, miles=game.award_miles, morale=game.morale, bugs=game.bugs)
         elif game.is_lost:
             turn_message = game.get_loss_reason()
 
