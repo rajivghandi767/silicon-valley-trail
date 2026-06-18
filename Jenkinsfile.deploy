@@ -72,7 +72,6 @@ pipeline {
                     [envVar: 'POSTGRES_PASSWORD', vaultKey: 'POSTGRES_PASSWORD'],
                     [envVar: 'POSTGRES_DB', vaultKey: 'POSTGRES_DB'],
                     [envVar: 'REDIS_URL', vaultKey: 'REDIS_URL'],
-                    [envVar: 'ADMIN_URL', vaultKey: 'ADMIN_URL'],
                     [envVar: 'DISCORD_WEBHOOK_URL', vaultKey: 'DISCORD_WEBHOOK_URL'],
                 ]]]) {
                     withCredentials([usernamePassword(credentialsId: env.REGISTRY_CRED_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASS')]) {
@@ -92,7 +91,6 @@ pipeline {
                                 echo "POSTGRES_PASSWORD='${POSTGRES_PASSWORD}'" >> .env.prod
                                 echo "POSTGRES_DB='${POSTGRES_DB}'" >> .env.prod
                                 echo "REDIS_URL='${REDIS_URL}'" >> .env.prod
-                                echo "ADMIN_URL='${ADMIN_URL}'" >> .env.prod
                                 echo "DISCORD_WEBHOOK_URL='${DISCORD_WEBHOOK_URL}'" >> .env.prod
                             '''
 
