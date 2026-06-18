@@ -101,5 +101,3 @@ export function ProjectSwitcher(_props: ProjectSwitcherProps) {
     </div>
   );
 }
-
-export default ProjectSwitcher;

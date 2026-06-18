@@ -20,8 +20,3 @@ export interface GameState {
     status_summary: string;
     message?: string;
 }
-
-export interface BugReport {
-    issue_type: 'game_logic' | 'ui_bug' | 'typo' | 'other';
-    user_note: string;
-}

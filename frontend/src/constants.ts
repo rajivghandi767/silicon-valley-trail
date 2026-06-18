@@ -6,7 +6,3 @@ export const WARNING_THRESHOLDS = {
   BUGS_WARNING: 30,
   BUGS_CRITICAL: 40,
 } as const;
-
-export const UI_DELAYS = {
-  MODAL_SUCCESS_CLOSE_MS: 2000,
-} as const;
