@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "../utils/api";
 
 export function ReportModal() {
@@ -7,6 +7,18 @@ export function ReportModal() {
   const [userNote, setUserNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (success) {
+      timeoutId = setTimeout(() => {
+        setIsOpen(false);
+        setSuccess(false);
+        setUserNote("");
+      }, 2000);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [success]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,11 +31,6 @@ export function ReportModal() {
       });
 
       setSuccess(true);
-      setTimeout(() => {
-        setIsOpen(false);
-        setSuccess(false);
-        setUserNote("");
-      }, 2000);
     } catch (error) {
       console.error(error);
       alert("Failed to send report. Network or server error.");

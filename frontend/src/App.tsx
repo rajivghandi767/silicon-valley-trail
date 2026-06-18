@@ -3,6 +3,7 @@ import { apiFetch } from "./utils/api";
 import { GameState, GameAction } from "./types";
 import { ProjectSwitcher } from "./components/ProjectSwitcher";
 import { ReportModal } from "./components/ReportModal";
+import { LazySection } from "./components/LazySection";
 import { WARNING_THRESHOLDS } from "./constants";
 import { usePortfolioData } from "./hooks/usePortfolioData";
 import "./index.css";
@@ -17,14 +18,18 @@ function App() {
   );
 
   useEffect(() => {
+    let isMounted = true;
     apiFetch<GameState>("/api/state/")
       .then((data) => {
+        if (!isMounted) return;
         setGameState(data);
         if (data.message) setNarrative(data.message);
       })
       .catch((err: Error) => {
+        if (!isMounted) return;
         setError(err.message);
       });
+    return () => { isMounted = false; };
   }, []);
 
   const handleAction = async (actionType: GameAction) => {
@@ -308,7 +313,7 @@ function App() {
           </div>
         </div>
 
-        <div className="footer">
+        <LazySection className="footer">
           <span>Built for the LinkedIn REACH Apprenticeship</span>
           <span>
             Developed by{" "}
@@ -329,7 +334,7 @@ function App() {
           </span>
 
           <ReportModal />
-        </div>
+        </LazySection>
       </main>
     </div>
   );

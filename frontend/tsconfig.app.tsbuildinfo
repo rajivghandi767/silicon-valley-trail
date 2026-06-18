@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/constants.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/projectswitcher.tsx","./src/components/reportmodal.tsx","./src/hooks/useportfoliodata.ts","./src/utils/api.ts"],"version":"6.0.3"}
+{"root":["./src/app.tsx","./src/constants.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/lazysection.tsx","./src/components/projectswitcher.tsx","./src/components/reportmodal.tsx","./src/hooks/useportfoliodata.ts","./src/utils/api.ts"],"version":"6.0.3"}
