@@ -1,7 +1,7 @@
 # backend/game/engine/state.py
 from django.core.cache import cache
 from ..models import Location
-from .constants import STATUS_WON, STATUS_LOST, STATUS_ACTIVE, DEFEAT_MESSAGES
+from .constants import STATUS_WON, STATUS_LOST, STATUS_ACTIVE, DEFEAT_MESSAGES, WARNING_THRESHOLDS
 
 
 class CacheGameState:
@@ -107,6 +107,16 @@ class CacheGameState:
         else:
             status_text = STATUS_ACTIVE.format(**format_kwargs)
 
+        stat_statuses = {
+            "days": "critical" if self.days_remaining <= WARNING_THRESHOLDS["DAYS"] else "good",
+            "cash": "critical" if self.cash <= WARNING_THRESHOLDS["CASH"] else "good",
+            "miles": "default" if self.award_miles < WARNING_THRESHOLDS["MILES"] else "blue",
+            "morale": "critical" if self.morale <= WARNING_THRESHOLDS["MORALE"] else "good",
+            "bugs": "critical" if self.bugs >= WARNING_THRESHOLDS["BUGS_CRITICAL"] 
+                    else "warning" if self.bugs >= WARNING_THRESHOLDS["BUGS_WARNING"] 
+                    else "good",
+        }
+
         return {
             "current_location": location.name if location else "Unknown",
             "description": location.description if location else "",
@@ -120,4 +130,5 @@ class CacheGameState:
             "is_lost": self.is_lost,
             "is_won": self.is_won,
             "status_summary": status_text,
+            "stat_statuses": stat_statuses,
         }

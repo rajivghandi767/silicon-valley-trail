@@ -11,6 +11,15 @@ from the core Python logic to ensure a highly scalable, data-driven architecture
 # 1. CORE ENGINE MECHANICS, ACTIONS & ECONOMY
 # ============================================================================
 
+WARNING_THRESHOLDS = {
+    "DAYS": 3,
+    "CASH": 300,
+    "MILES": 2000,
+    "MORALE": 30,
+    "BUGS_WARNING": 30,
+    "BUGS_CRITICAL": 40,
+}
+
 
 class GameAction(StrEnum):
     """Strict enumeration of all valid player actions."""

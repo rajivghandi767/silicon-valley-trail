@@ -19,4 +19,11 @@ export interface GameState {
     is_lost: boolean;
     status_summary: string;
     message?: string;
+    stat_statuses: {
+        days: "critical" | "good";
+        cash: "critical" | "good";
+        miles: "default" | "blue";
+        morale: "critical" | "good";
+        bugs: "critical" | "warning" | "good";
+    };
 }

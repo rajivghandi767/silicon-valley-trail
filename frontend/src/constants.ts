@@ -1,8 +1,0 @@
-export const WARNING_THRESHOLDS = {
-  DAYS: 3,
-  CASH: 300,
-  MILES: 2000,
-  MORALE: 30,
-  BUGS_WARNING: 30,
-  BUGS_CRITICAL: 40,
-} as const;

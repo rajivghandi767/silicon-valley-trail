@@ -4,9 +4,19 @@ import { GameState, GameAction } from "./types";
 import { ProjectSwitcher } from "./components/ProjectSwitcher";
 import { ReportModal } from "./components/ReportModal";
 import { LazySection } from "./components/LazySection";
-import { WARNING_THRESHOLDS } from "./constants";
 import { usePortfolioData } from "./hooks/usePortfolioData";
 import "./index.css";
+
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case "critical": return "var(--accent-red)";
+        case "warning": return "var(--accent-orange)";
+        case "good": return "var(--accent-green)";
+        case "default": return "var(--text-main)";
+        case "blue": return "var(--accent-blue)";
+        default: return "inherit";
+    }
+};
 
 function App() {
   const { info } = usePortfolioData();
@@ -141,12 +151,7 @@ function App() {
           </span>
           <span
             className="stat-value"
-            style={{
-              color:
-                gameState.days_remaining <= WARNING_THRESHOLDS.DAYS
-                  ? "var(--accent-red)"
-                  : "var(--accent-green)",
-            }}
+            style={{ color: getStatusColor(gameState.stat_statuses.days) }}
           >
             {gameState.days_remaining}
           </span>
@@ -159,12 +164,7 @@ function App() {
           </span>
           <span
             className="stat-value"
-            style={{
-              color:
-                gameState.cash <= WARNING_THRESHOLDS.CASH
-                  ? "var(--accent-red)"
-                  : "var(--accent-green)",
-            }}
+            style={{ color: getStatusColor(gameState.stat_statuses.cash) }}
           >
             ${gameState.cash.toLocaleString()}
           </span>
@@ -177,12 +177,7 @@ function App() {
           </span>
           <span
             className="stat-value"
-            style={{
-              color:
-                gameState.award_miles < WARNING_THRESHOLDS.MILES
-                  ? "var(--text-main)"
-                  : "var(--accent-blue)",
-            }}
+            style={{ color: getStatusColor(gameState.stat_statuses.miles) }}
           >
             {gameState.award_miles.toLocaleString()}
           </span>
@@ -195,12 +190,7 @@ function App() {
           </span>
           <span
             className="stat-value"
-            style={{
-              color:
-                gameState.morale <= WARNING_THRESHOLDS.MORALE
-                  ? "var(--accent-red)"
-                  : "var(--accent-green)",
-            }}
+            style={{ color: getStatusColor(gameState.stat_statuses.morale) }}
           >
             {gameState.morale}%
           </span>
@@ -213,14 +203,7 @@ function App() {
           </span>
           <span
             className="stat-value"
-            style={{
-              color:
-                gameState.bugs >= WARNING_THRESHOLDS.BUGS_CRITICAL
-                  ? "var(--accent-red)"
-                  : gameState.bugs >= WARNING_THRESHOLDS.BUGS_WARNING
-                    ? "var(--accent-orange)"
-                    : "var(--accent-green)",
-            }}
+            style={{ color: getStatusColor(gameState.stat_statuses.bugs) }}
           >
             {gameState.bugs} / 50
           </span>
