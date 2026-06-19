@@ -28,7 +28,7 @@ class CacheGameState:
 
         Because the total number of stops dictates win/loss boundary conditions, we cache this
         value indefinitely using Redis. This eliminates a recurrent `SELECT COUNT(*)`
-        query from executing on every single player action.
+        query from executing on every single player action, significantly reducing database load.
         """
         return cache.get_or_set("svt_total_stops", Location.objects.count, timeout=None)
 
@@ -50,7 +50,12 @@ class CacheGameState:
         return self.current_location_id == 10 and not self.is_lost
 
     def apply_boundaries(self):
-        """Prevents negative states from hitting the UI"""
+        """
+        Prevents negative states from hitting the UI.
+        
+        This acts as a normalization step before persisting the state back to the cache. 
+        It ensures the frontend never receives invalid numbers (e.g. -10 bugs or 105% morale).
+        """
         self.morale = max(0, min(100, self.morale))
         self.bugs = max(0, self.bugs)
 
@@ -73,7 +78,8 @@ class CacheGameState:
 
         Fetches the current Location object for descriptions/names. To prevent a database
         lookup on every user interaction (e.g., resting, coding, traveling), we heavily cache
-        the individual Location objects indefinitely.
+        the individual Location objects indefinitely. The `fetch_loc` closure is only executed 
+        if the cache misses.
         """
 
         def fetch_loc():

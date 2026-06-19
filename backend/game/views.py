@@ -18,7 +18,20 @@ GAME_SESSION_TTL = 86400
 
 
 def get_session_cache_key(request: HttpRequest) -> str:
-    """Retrieves or provisions a tracking key tied to the Django session."""
+    """
+    Retrieves or provisions a tracking key tied to the Django session.
+    
+    This function uses Django's session framework to generate a unique identifier 
+    for the current user. If no session exists, it initializes one. 
+    This allows us to maintain the player's game state across requests (and page reloads)
+    without needing a formal authentication system (like a login page).
+    
+    Args:
+        request: The incoming HTTP request.
+    
+    Returns:
+        A formatted string used as the key to store/retrieve the game state in Redis.
+    """
     if not request.session.session_key:
         request.session.create()
         request.session["initialized"] = True
@@ -28,10 +41,18 @@ def get_session_cache_key(request: HttpRequest) -> str:
 @ensure_csrf_cookie
 @require_http_methods(["GET"])
 def get_state(request: HttpRequest) -> JsonResponse:
+    """
+    Retrieves the current game state for the player.
+    
+    The @ensure_csrf_cookie decorator guarantees that a CSRF token is sent to the 
+    frontend, which is necessary since we use a decoupled React SPA. Subsequent POST
+    requests will include this token to verify their authenticity.
+    """
     cache_key = get_session_cache_key(request)
     game = cache.get(cache_key)
 
-    # Auto-initialize a new game if one isn't found instead of throwing a 404
+    # Auto-initialize a new game if one isn't found instead of throwing a 404.
+    # This ensures a seamless onboarding experience for first-time visitors.
     if not game:
         game = CacheGameState(current_location_id=1)
         cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
@@ -42,6 +63,7 @@ def get_state(request: HttpRequest) -> JsonResponse:
 
     response_data = game.serialize_for_api()
 
+    # Determine the contextually appropriate status message based on whether the game is over
     if game.is_won:
         location_name = response_data.get("current_location", "UNKNOWN")
         display_message = VICTORY_MESSAGE.format(
@@ -64,6 +86,15 @@ def get_state(request: HttpRequest) -> JsonResponse:
 
 @require_http_methods(["POST"])
 def take_action(request: HttpRequest) -> JsonResponse:
+    """
+    Processes a player's action (e.g., code, travel, rest) and updates the game state.
+    
+    This view demonstrates a typical decoupled architectural pattern:
+    1. Validation: Ensures the session exists and the game hasn't ended.
+    2. Delegation: Passes the core business logic (turn processing) to a separate engine module.
+    3. Persistence: Updates the in-memory cache with the new state bounds applied.
+    4. Presentation: Serializes the updated domain models back into JSON for the frontend client.
+    """
     cache_key = get_session_cache_key(request)
     game = cache.get(cache_key)
 
@@ -84,13 +115,15 @@ def take_action(request: HttpRequest) -> JsonResponse:
         data = json.loads(request.body)
         raw_action = data.get("action", "")
 
-        # Delegate game logic to the engine
+        # Delegate game logic to the engine module.
+        # This keeps our views thin and focused strictly on HTTP concerns,
+        # moving complex rules processing into testable service layers.
         turn_message, error = process_turn(game, raw_action)
 
         if error:
             return JsonResponse({"error": error}, status=400)
 
-        # Apply bounds and save to Redis
+        # Ensure metrics stay within valid ranges (e.g., max morale is 100) before persisting
         game.apply_boundaries()
         cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
 

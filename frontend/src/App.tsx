@@ -17,6 +17,9 @@ function App() {
     "// Establishing secure connection...",
   );
 
+  // We use useEffect to fetch the initial game state when the component mounts.
+  // The 'isMounted' flag is a common React pattern used to prevent state updates
+  // on unmounted components, which can happen if the user navigates away before the API responds.
   useEffect(() => {
     let isMounted = true;
     apiFetch<GameState>("/api/state/")
@@ -32,6 +35,11 @@ function App() {
     return () => { isMounted = false; };
   }, []);
 
+  /**
+   * Handles user actions (e.g., 'code', 'mentor', 'rest') by sending a POST request to the API.
+   * Uses async/await syntax for cleaner asynchronous code flow compared to Promise chaining.
+   * The 'finally' block ensures the loading state is reset regardless of whether the request succeeds or fails.
+   */
   const handleAction = async (actionType: GameAction) => {
     setIsLoading(true);
     setError(null);

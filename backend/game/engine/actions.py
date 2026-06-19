@@ -29,6 +29,11 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
     """
     Processes the player's action, applies weather conditions, destination rewards,
     and random events.
+    
+    This function acts as the core game loop processor. It takes the requested action,
+    validates it against the domain rules, interacts with external services (weather), 
+    and mutates the game state. Returning a tuple of (message, error) avoids raising 
+    Exceptions for expected game logic errors, keeping the control flow predictable.
     """
     turn_message: str = "> Action initiated...\n\n"
     successful_travel: bool = False
@@ -43,7 +48,8 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
         error = f"Invalid/unknown action. Please select from: {valid_actions_str}."
         return turn_message, error
 
-    # Action routing via structural pattern matching
+    # Action routing via structural pattern matching (Python 3.10+)
+    # This is more readable and performant than a long chain of if/elif statements
     match action:
         # STATIONARY ACTIONS
         case a if a in STATIONARY_ACTIONS:
@@ -65,6 +71,9 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
                 return turn_message, TRAVEL_MESSAGES["error_no_location"]
 
             if a == GameAction.FERRY:
+                # We call an external service to determine weather impacts.
+                # Keeping this decoupled from the state mutation allows us to 
+                # easily mock `check_marine_conditions` in unit tests.
                 is_rough_seas, wave_height = check_marine_conditions(
                     next_location.latitude, next_location.longitude
                 )
