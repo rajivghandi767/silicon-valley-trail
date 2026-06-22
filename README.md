@@ -122,7 +122,7 @@ Ensure your local `.env` variables are configured, then apply migrations and sta
 
 ```bash
 python manage.py migrate
-python manage.py load_islands
+python manage.py seed_data
 python manage.py runserver
 ```
 
