@@ -20,7 +20,7 @@ def check_marine_conditions(latitude: float, longitude: float) -> Tuple[bool, fl
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read().decode())
             wave_height: float = float(data.get("current", {}).get("wave_height", 0.0))
-            is_rough_seas: bool = wave_height >= 1.5 or random.random() < 0.20
+            is_rough_seas: bool = wave_height >= 2.5 or random.random() < 0.10
             result = (is_rough_seas, wave_height)
             cache.set(cache_key, result, timeout=600)
             return result
@@ -49,7 +49,7 @@ def check_aviation_conditions(latitude: float, longitude: float) -> Tuple[bool, 
                 data.get("current_weather", {}).get("windspeed", 0.0)
             )
 
-            is_thunderstorm: bool = weather_code >= 61 or random.random() < 0.20
+            is_thunderstorm: bool = weather_code >= 95 or random.random() < 0.10
             is_turbulent: bool = wind_speed >= 25.0 or random.random() < 0.50
 
             result = (is_thunderstorm, is_turbulent)
