@@ -44,7 +44,7 @@ TRAVEL_ACTIONS: Set[GameAction] = {GameAction.FERRY, GameAction.FLIGHT}
 # --- Action Impacts on Player State ---
 STATIONARY_ACTION_IMPACTS: Dict[GameAction, Dict[str, int]] = {
     GameAction.REST: {"morale": 40, "cash": -100, "days_remaining": -1},
-    GameAction.CODE: {"bugs": -10, "morale": -20, "days_remaining": -1},
+    GameAction.CODE: {"bugs": -20, "morale": -20, "days_remaining": -1},
     GameAction.MENTOR: {"bugs": -10, "morale": 20, "days_remaining": -1},
 }
 
