@@ -212,8 +212,8 @@ STATUS_LOST: str = "SYSTEM FAILURE. Secure connection closed."
 STATUS_ACTIVE: str = "Currently in {location_name} with ${cash} cash, {award_miles} miles, {morale}% morale, {bugs} bugs, and {days_remaining} days remaining."
 
 DEFEAT_MESSAGES: Dict[str, str] = {
-    "time": "💀 FATAL EXCEPTION: You ran out of days or it is mathematically impossible to reach Dominica in time.",
-    "bankrupt": "💀 FATAL EXCEPTION: You went bankrupt and ran out of miles. You are stranded in the Caribbean.",
-    "bugs": "💀 FATAL EXCEPTION: Your MVP crashed during the pitch. The codebase was overwhelmed with 50+ bugs.",
-    "morale": "💀 FATAL EXCEPTION: Burnout. Your morale hit 0 and you closed your laptop for good.",
+    "time": "💀 DEADLINE MISSED: The hiking festival ended before you arrived. Shalini is already flying back to Silicon Valley. Your pitch will have to wait until next year.",
+    "bankrupt": "💀 INSUFFICIENT FUNDS: Your card was declined and your frequent flyer account is empty. You are officially stranded in the Caribbean.",
+    "bugs": "💀 CRITICAL FAILURE: 50+ unresolved bugs. The technical debt crashed your MVP during the demo. Shalini gave you some great architectural feedback to work on for the next cycle.",
+    "morale": "💀 SYSTEM OVERLOAD: Morale hit 0%. Knowing when to step away is a core engineering skill. You closed your laptop to prioritize your well-being and come back stronger tomorrow.",
 }
