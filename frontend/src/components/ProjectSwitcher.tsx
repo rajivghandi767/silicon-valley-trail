@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { usePortfolioData } from "../hooks/usePortfolioData";
 
-interface ProjectSwitcherProps {}
-
-export function ProjectSwitcher(_props: ProjectSwitcherProps) {
+export function ProjectSwitcher() {
   const { projects } = usePortfolioData();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,22 +74,45 @@ export function ProjectSwitcher(_props: ProjectSwitcherProps) {
               className="switcher-item"
             >
               <div
-                  className="w-8 flex-shrink-0 flex items-start justify-start text-xl pt-0.5 text-gray-700 dark:text-gray-300"
-                >
-                  {p.emoji || (p.technology ? p.technology.substring(0, 2).toUpperCase() : "✨")}
-                </div>
+                style={{
+                  width: "2rem",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "flex-start",
+                  fontSize: "1.25rem",
+                  paddingTop: "0.125rem",
+                  color: "var(--text-main)",
+                }}
+              >
+                {p.emoji || (p.technology ? p.technology.substring(0, 2).toUpperCase() : "✨")}
+              </div>
               <div>
                 <div className="switcher-title">{p.title}</div>
                 <div className="switcher-desc">{p.description}</div>
               </div>
             </a>
           ))}
-          <div className="p-2 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900 text-center">
+          <div
+            style={{
+              padding: "0.5rem",
+              borderTop: "1px solid var(--border-color)",
+              backgroundColor: "var(--sidebar-bg)",
+              textAlign: "center",
+            }}
+          >
             <a
               href="https://github.com/rajivghandi767"
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-medium text-brand-light dark:text-brand-dark hover:underline"
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "var(--accent-blue)",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
             >
               View GitHub Repo →
             </a>
