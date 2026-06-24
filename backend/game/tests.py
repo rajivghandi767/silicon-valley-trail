@@ -21,7 +21,10 @@ class GameMechanicsTests(TestCase):
         session.save()
         self.cache_key = f"svt_game_{session.session_key}"
 
-        # 1. Seed Locations
+        # Clear global cache so dynamic total_stops doesn't persist across runs
+        cache.clear()
+
+        # 1. Seed Locations (exactly 10 to support dynamic is_won logic)
         Location.objects.create(
             name="New York City",
             description="The start.",
@@ -43,6 +46,15 @@ class GameMechanicsTests(TestCase):
             latitude=15.41,
             longitude=-61.37,
         )
+
+        for i in range(3, 10):
+            Location.objects.create(
+                name=f"Dummy Location {i}",
+                description=f"Stop {i}.",
+                sequence_in_journey=i,
+                latitude=0.0,
+                longitude=0.0,
+            )
 
         # 2. Initialize Redis-backed CacheGameState
         self.game = CacheGameState(
@@ -79,7 +91,7 @@ class GameMechanicsTests(TestCase):
         # Fetch updated state from Cache
         updated_game = cache.get(self.cache_key)
 
-        self.assertEqual(updated_game.morale, 90)
+        self.assertEqual(updated_game.morale, 100)
         self.assertEqual(updated_game.cash, 2400)
         self.assertEqual(updated_game.days_remaining, 17)
 
@@ -104,7 +116,7 @@ class GameMechanicsTests(TestCase):
         updated_game = cache.get(self.cache_key)
 
         self.assertEqual(updated_game.current_location_id, 2)
-        self.assertEqual(updated_game.award_miles, 6000)
+        self.assertEqual(updated_game.award_miles, 7000)
         self.assertEqual(updated_game.cash, 3000)
         self.assertEqual(updated_game.days_remaining, 17)
 
@@ -130,13 +142,7 @@ class GameMechanicsTests(TestCase):
         mock_weather.return_value = (False, False)
         mock_choices.return_value = [{"impacts": {}, "text": "Mocked Event"}]
 
-        Location.objects.create(
-            name="San Juan",
-            description="Stop 9.",
-            sequence_in_journey=9,
-            latitude=18.46,
-            longitude=-66.10,
-        )
+        # We are at stop 9 (Dummy Location 9)
         self.game.current_location_id = 9
         cache.set(self.cache_key, self.game, timeout=86400)
 

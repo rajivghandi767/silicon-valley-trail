@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Dict, Any
+from typing import Tuple, Optional, Dict, Any, cast
 from django.core.cache import cache
 
 from ..models import Location
@@ -12,6 +12,7 @@ from .constants import (
     TRAVEL_IMPACTS,
     ACTION_BASE_MESSAGES,
     TRAVEL_MESSAGES,
+    UI_MESSAGES,
 )
 
 
@@ -29,13 +30,13 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
     """
     Processes the player's action, applies weather conditions, destination rewards,
     and random events.
-    
+
     This function acts as the core game loop processor. It takes the requested action,
     validates it against the domain rules, interacts with external services (weather), 
     and mutates the game state. Returning a tuple of (message, error) avoids raising 
     Exceptions for expected game logic errors, keeping the control flow predictable.
     """
-    turn_message: str = "> Action initiated...\n\n"
+    turn_message: str = UI_MESSAGES["action_initiated"]
     successful_travel: bool = False
     error: Optional[str] = None
     next_location: Optional[Location] = None
@@ -45,7 +46,8 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
         action = GameAction(raw_action)
     except ValueError:
         valid_actions_str = ", ".join([a.value for a in GameAction])
-        error = f"Invalid/unknown action. Please select from: {valid_actions_str}."
+        error = UI_MESSAGES["invalid_action"].format(
+            valid_actions_str=valid_actions_str)
         return turn_message, error
 
     # Action routing via structural pattern matching (Python 3.10+)
@@ -53,6 +55,12 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
     match action:
         # STATIONARY ACTIONS
         case a if a in STATIONARY_ACTIONS:
+            if a == GameAction.REST:
+                rest_cost = abs(
+                    STATIONARY_ACTION_IMPACTS[GameAction.REST].get("cash", 0))
+                if game.cash < rest_cost:
+                    return turn_message, UI_MESSAGES["insufficient_funds"].format(action="Rest", cost=rest_cost)
+
             apply_impacts(game, STATIONARY_ACTION_IMPACTS[a])
             turn_message += ACTION_BASE_MESSAGES.get(a, "")
 
@@ -71,8 +79,13 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
                 return turn_message, TRAVEL_MESSAGES["error_no_location"]
 
             if a == GameAction.FERRY:
+                ferry_cost = abs(
+                    TRAVEL_IMPACTS["ferry_success"].get("cash", 0))
+                if game.cash < ferry_cost:
+                    return turn_message, UI_MESSAGES["insufficient_funds"].format(action="Ferry", cost=ferry_cost)
+
                 # We call an external service to determine weather impacts.
-                # Keeping this decoupled from the state mutation allows us to 
+                # Keeping this decoupled from the state mutation allows us to
                 # easily mock `check_marine_conditions` in unit tests.
                 is_rough_seas, wave_height = check_marine_conditions(
                     next_location.latitude, next_location.longitude
@@ -122,8 +135,10 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
     # Evaluate post-travel destination effects
     if successful_travel and next_location:
         # Dynamically determine the final stop
-        total_stops = cache.get_or_set(
-            "svt_total_stops", Location.objects.count, timeout=None
+        total_stops = cast(
+            int,
+            cache.get_or_set("svt_total_stops",
+                             Location.objects.count, timeout=None) or 0,
         )
 
         # Only process rewards and events if we are NOT at the final stop
@@ -140,13 +155,13 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
                 )
 
                 if next_location.reward_message:
-                    turn_message += (
-                        f"\n\n> Destination Arrival: {next_location.reward_message}"
-                    )
+                    turn_message += UI_MESSAGES["destination_arrival"].format(
+                        message=next_location.reward_message)
 
             # Evaluate probabilistic events
             event_message = trigger_random_event(game, next_location.name)
             if event_message:
-                turn_message += f"\n\n> {event_message}"
+                turn_message += UI_MESSAGES["random_event"].format(
+                    message=event_message)
 
     return turn_message, error

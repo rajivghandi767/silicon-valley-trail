@@ -2,8 +2,14 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  // Inject local fallback for API URL
+  if (mode === 'development') {
+    process.env.VITE_API_URL = process.env.VITE_API_URL || 'http://localhost:8000';
+  }
+
+  return {
+    plugins: [react()],
   test: {
     globals: true,
     environment: 'jsdom',
@@ -51,4 +57,5 @@ export default defineConfig({
   css: {
     devSourcemap: true,
   },
+  };
 })

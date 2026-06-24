@@ -20,7 +20,7 @@ def check_marine_conditions(latitude: float, longitude: float) -> Tuple[bool, fl
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read().decode())
             wave_height: float = float(data.get("current", {}).get("wave_height", 0.0))
-            is_rough_seas: bool = wave_height >= 2.5 or random.random() < 0.10
+            is_rough_seas: bool = wave_height >= 4.0 or random.random() < 0.05
             result = (is_rough_seas, wave_height)
             cache.set(cache_key, result, timeout=600)
             return result

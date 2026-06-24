@@ -23,6 +23,7 @@ function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
   const [narrative, setNarrative] = useState<string>(
     "// Establishing secure connection...",
   );
@@ -70,14 +71,12 @@ function App() {
   };
 
   const handleRestart = async (force = false) => {
-    if (
-      !force &&
-      !window.confirm(
-        "Are you sure you want to restart the game? All progress will be lost.",
-      )
-    )
+    if (!force) {
+      setIsRestartModalOpen(true);
       return;
+    }
 
+    setIsRestartModalOpen(false);
     setIsLoading(true);
     setError(null);
     try {
@@ -166,7 +165,9 @@ function App() {
             className="stat-value"
             style={{ color: getStatusColor(gameState.stat_statuses.cash) }}
           >
-            ${gameState.cash.toLocaleString()}
+            {gameState.cash < 0 
+              ? `-$${Math.abs(gameState.cash).toLocaleString()}` 
+              : `$${gameState.cash.toLocaleString()}`}
           </span>
         </div>
 
@@ -327,6 +328,46 @@ function App() {
           <ReportModal />
         </LazySection>
       </main>
+
+      {/* Custom Restart Modal to bypass Firefox native dialog blocks */}
+      {isRestartModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button onClick={() => setIsRestartModalOpen(false)} className="modal-close">
+              ✕
+            </button>
+            <h2 className="title" style={{ fontSize: "1.25rem", marginBottom: "1rem" }}>
+              &gt; System Reboot_
+            </h2>
+            <div style={{ color: "var(--text-main)", marginBottom: "2rem", lineHeight: "1.6" }}>
+              Are you sure you want to restart the game? All progress will be lost.
+            </div>
+            <div className="modal-actions">
+              <button
+                type="button"
+                onClick={() => setIsRestartModalOpen(false)}
+                className="action-btn"
+                style={{
+                  borderColor: "var(--text-main)",
+                  color: "var(--text-main)",
+                  flexDirection: "row",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRestart(true)}
+                disabled={isLoading}
+                className="action-btn"
+                style={{ flexDirection: "row", borderColor: "var(--accent-orange)", color: "var(--accent-orange)" }}
+              >
+                {isLoading ? "Rebooting..." : "Confirm Restart"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
