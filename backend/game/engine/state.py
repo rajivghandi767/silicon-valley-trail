@@ -24,23 +24,27 @@ class CacheGameState:
         # We deduct this from the starting cash to guarantee the mathematical squeeze is never broken!
         def fetch_cash_rewards() -> int:
             return sum(
-                loc.reward_amount 
+                loc.reward_amount
                 for loc in Location.objects.filter(reward_resource="cash", sequence_in_journey__lt=self.total_stops)
             )
-            
-        total_cash_rewards = cache.get_or_set("svt_cash_rewards", fetch_cash_rewards, timeout=None)
+
+        total_cash_rewards = cache.get_or_set(
+            "svt_cash_rewards", fetch_cash_rewards, timeout=None)
         assert isinstance(total_cash_rewards, int)
 
         # Dynamic Resource Assignment
-        base_cash = int((jumps * DYNAMIC_RESOURCE_MULTIPLIERS["cash_per_jump"]) + DYNAMIC_RESOURCE_MULTIPLIERS["cash_buffer_flat"])
-        self.cash = cash if cash is not None else max(0, base_cash - total_cash_rewards)
-        
-        self.days_remaining = days_remaining if days_remaining is not None else int((jumps * DYNAMIC_RESOURCE_MULTIPLIERS["days_per_jump"]) + DYNAMIC_RESOURCE_MULTIPLIERS["days_buffer_flat"])
+        base_cash = int(
+            (jumps * DYNAMIC_RESOURCE_MULTIPLIERS["cash_per_jump"]) + DYNAMIC_RESOURCE_MULTIPLIERS["cash_buffer_flat"])
+        self.cash = cash if cash is not None else max(
+            0, base_cash - total_cash_rewards)
+
+        self.days_remaining = days_remaining if days_remaining is not None else int(
+            (jumps * DYNAMIC_RESOURCE_MULTIPLIERS["days_per_jump"]) + DYNAMIC_RESOURCE_MULTIPLIERS["days_buffer_flat"])
 
         num_flights = int(
             jumps / DYNAMIC_RESOURCE_MULTIPLIERS["jumps_per_flight"])
-        self.award_miles = award_miles if award_miles is not None else num_flights * \
-            DYNAMIC_RESOURCE_MULTIPLIERS["flight_cost_miles"]
+        self.award_miles = award_miles if award_miles is not None else int(num_flights *
+                                                                           DYNAMIC_RESOURCE_MULTIPLIERS["flight_cost_miles"])
 
         # Fixed Resource Assignment
         self.morale = morale if morale is not None else STARTING_FIXED_STATS["morale"]
@@ -55,7 +59,8 @@ class CacheGameState:
         value indefinitely using Redis. This eliminates a recurrent `SELECT COUNT(*)`
         query from executing on every single player action, significantly reducing database load.
         """
-        total_stops = cache.get_or_set("svt_total_stops", lambda: Location.objects.count(), timeout=None)
+        total_stops = cache.get_or_set(
+            "svt_total_stops", lambda: Location.objects.count(), timeout=None)
         assert isinstance(total_stops, int)
         return total_stops
 
@@ -64,7 +69,7 @@ class CacheGameState:
         # If the player has reached the final destination, Victory trumps all loss conditions
         if self.current_location_id == self.total_stops:
             return False
-            
+
         stops_remaining = self.total_stops - self.current_location_id
         if self.days_remaining < stops_remaining:
             return True
