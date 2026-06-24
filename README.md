@@ -68,14 +68,11 @@ The local development environment is strictly isolated from production infrastru
 
 ### Prerequisites
 
-**For Docker Setup (Recommended):**
+> ⚠️ **Architecture Note:** To ensure strict parity with the production environment and eliminate local dependency issues, this project is exclusively containerized. Please ensure you have Docker installed before proceeding.
+
 - 🐳 Docker & Docker Compose
 
-**For Manual Setup:**
-- 🐍 Python 3.x
-- 🟢 Node.js & npm
-
-### Installation
+### Getting Started
 
 1. **Clone the repository:**
 
@@ -98,42 +95,6 @@ The local development environment is strictly isolated from production infrastru
    - Redis (Direct Inspection): `localhost:6379`
 
 ---
-
-### Alternative Manual Setup (Non-Docker)
-
-While the Docker Compose stack is the recommended approach to ensure parity with the containerized production environment, you can also run the application servers manually.
-
-> **⚠️ Note:**
-> Manual setup requires local installations of Python, Node.js. If you opt for this approach, the code is configured to fallback to SQLite and LocMemCache.
-
-**Note**
-
-**1. Start the Backend API:**
-Navigate to the backend directory, create a virtual environment, and install the required dependencies:
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r dev-requirements.txt
-```
-
-Ensure your local `.env` variables are configured, then apply migrations and start the server:
-
-```bash
-python manage.py migrate
-python manage.py seed_data
-python manage.py runserver
-```
-
-**2. Start the Frontend SPA:**
-In a separate terminal instance, navigate to the frontend directory, install the Node modules, and start the development server:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
 
 ---
 

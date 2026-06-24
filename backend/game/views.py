@@ -58,7 +58,7 @@ def get_state(request: HttpRequest) -> JsonResponse:
         cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
 
         response_data = game.serialize_for_api()
-        response_data["message"] = INTRO_MESSAGE
+        response_data["message"] = INTRO_MESSAGE.format(days_remaining=game.days_remaining)
         return JsonResponse(response_data)
 
     response_data = game.serialize_for_api()
@@ -156,7 +156,7 @@ def restart_game(request: HttpRequest) -> JsonResponse:
     cache.set(cache_key, new_game, timeout=GAME_SESSION_TTL)
 
     response_data = new_game.serialize_for_api()
-    response_data["message"] = REBOOT_MESSAGE
+    response_data["message"] = REBOOT_MESSAGE.format(days_remaining=new_game.days_remaining)
     return JsonResponse(response_data, status=200)
 
 

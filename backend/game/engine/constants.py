@@ -11,13 +11,55 @@ from the core Python logic to ensure a highly scalable, data-driven architecture
 # 1. CORE ENGINE MECHANICS, ACTIONS & ECONOMY
 # ============================================================================
 
-WARNING_THRESHOLDS = {
+WARNING_THRESHOLDS: Dict[str, int] = {
     "DAYS": 3,
-    "CASH": 300,
-    "MILES": 2000,
+    "CASH": 200,
+    "MILES": 1000,
     "MORALE": 30,
     "BUGS_WARNING": 30,
     "BUGS_CRITICAL": 40,
+}
+
+CRITICAL_THRESHOLDS: Dict[str, int] = {
+    "MORALE": 0,
+    "BUGS": 50,
+    "CASH": 0,
+    "AWARD_MILES": 0,
+}
+
+BOUNDARY_LIMITS: Dict[str, int] = {
+    "MORALE_MIN": 0,
+    "MORALE_MAX": 100,
+    "BUGS_MIN": 0,
+    "CASH_MIN": 0,
+    "MILES_MIN": 0,
+}
+
+STARTING_LOCATION_ID: int = 1
+
+STARTING_FIXED_STATS: Dict[str, int] = {
+    "morale": 100,
+    "bugs": 0,
+}
+
+# Dynamic Multipliers (Used to calculate resources based on total DB stops)
+DYNAMIC_RESOURCE_MULTIPLIERS: Dict[str, float] = {
+    "cash_per_jump": 100.0,
+    "cash_buffer_flat": 500.0,
+    "days_per_jump": 1.5,
+    "days_buffer_flat": 2.5,
+    "jumps_per_flight": 3.0,
+    "flight_cost_miles": 1000.0,
+}
+
+EVENT_THRESHOLDS: Dict[str, int] = {
+    "MORALE_LOW": 30,
+    "MORALE_HIGH": 80,
+}
+
+EVENT_MODIFIERS: Dict[str, int] = {
+    "LOW_MORALE_PENALTY": 25,
+    "HIGH_MORALE_BONUS": 10,
 }
 
 
@@ -43,16 +85,16 @@ STATIONARY_ACTIONS: Set[GameAction] = {
 TRAVEL_ACTIONS: Set[GameAction] = {GameAction.FERRY, GameAction.FLIGHT}
 # --- Action Impacts on Player State ---
 STATIONARY_ACTION_IMPACTS: Dict[GameAction, Dict[str, int]] = {
-    GameAction.REST: {"morale": 40, "cash": -100, "days_remaining": -1},
-    GameAction.CODE: {"bugs": -20, "morale": -20, "days_remaining": -1},
+    GameAction.REST: {"morale": 50, "cash": -100, "days_remaining": -1},
+    GameAction.CODE: {"bugs": -30, "morale": -20, "days_remaining": -1},
     GameAction.MENTOR: {"bugs": -10, "morale": 20, "days_remaining": -1},
 }
 
 TRAVEL_IMPACTS: Dict[str, Any] = {
-    "flight_cost_threshold": 2000,
-    "ferry_success": {"cash": -150, "morale": -10, "days_remaining": -1},
+    "flight_cost_threshold": 1000,
+    "ferry_success": {"cash": -200, "morale": -20, "days_remaining": -1},
     "ferry_grounded": {"morale": -20, "days_remaining": -1},
-    "flight_cost": {"award_miles": -2000, "days_remaining": -1},
+    "flight_cost": {"award_miles": -1000, "days_remaining": -1},
     "flight_smooth": {"morale": 10},
     "flight_turbulent": {"morale": -15},
     "flight_grounded": {"morale": -15, "days_remaining": -1},
@@ -63,16 +105,16 @@ RANDOM_EVENTS: List[Dict[str, Any]] = [
     {
         "id": 1,
         "type": "negative",
-        "base_weight": 10,
-        "text": "A silent React dependency update broke your staging environment! (+20 Bugs)",
-        "impacts": {"bugs": 20},
+        "base_weight": 25,
+        "text": "A silent React dependency update broke your staging environment! (+30 Bugs)",
+        "impacts": {"bugs": 30},
     },
     {
         "id": 2,
         "type": "negative",
         "base_weight": 10,
-        "text": "You left your laptop charger at TSA and had to buy an overpriced replacement. (-$150)",
-        "impacts": {"cash": -150},
+        "text": "You left your laptop charger at TSA and had to buy an overpriced replacement. (-$200)",
+        "impacts": {"cash": -200},
     },
     {
         "id": 3,
@@ -99,8 +141,8 @@ RANDOM_EVENTS: List[Dict[str, Any]] = [
         "id": 6,
         "type": "positive",
         "base_weight": 10,
-        "text": "A delayed flight finally paid out AAdvantage compensation! (+2000 Miles)",
-        "impacts": {"award_miles": 2000},
+        "text": "A delayed flight finally paid out AAdvantage compensation! (+1000 Miles)",
+        "impacts": {"award_miles": 1000},
     },
     {
         "id": 7,
@@ -112,9 +154,9 @@ RANDOM_EVENTS: List[Dict[str, Any]] = [
     {
         "id": 8,
         "type": "negative",
-        "base_weight": 10,
-        "text": "You accidentally pushed your .env file to GitHub. You spent a day rotating keys. (-1 Day, +15 Bugs)",
-        "impacts": {"bugs": 15, "days_remaining": -1},
+        "base_weight": 25,
+        "text": "You accidentally pushed your .env file to GitHub. You spent a day rotating keys. (-1 Day, +25 Bugs)",
+        "impacts": {"bugs": 25, "days_remaining": -1},
     },
     {
         "id": 9,
@@ -134,8 +176,8 @@ RANDOM_EVENTS: List[Dict[str, Any]] = [
         "id": 11,
         "type": "negative",
         "base_weight": 10,
-        "text": "You stumbled into a Bilt Dining experience. The pescatarian menu was incredible! (-$120, +30 Morale)",
-        "impacts": {"cash": -120, "morale": 30},
+        "text": "You stumbled into a Bilt Dining experience. The pescatarian menu was incredible! (-$100, +30 Morale)",
+        "impacts": {"cash": -100, "morale": 30},
     },
     {
         "id": 12,
@@ -153,8 +195,8 @@ RANDOM_EVENTS: List[Dict[str, Any]] = [
 
 INTRO_MESSAGE: str = (
     "Traditional application portals are a black hole. As a self-taught developer from New York, you need a different strategy to land your dream Backend Apprenticeship.\n\n"
-    "Word on the wire is that Shalini Agarwal, Senior Director of Engineering at LinkedIn and head of the REACH program, is taking a rare, unplugged vacation to attend the Nature Island Hiking Festival in Dominica 🇩🇲.\n\n"
-    "You have 18 Days, your laptop, a little bit of cash, and a stash of airline award miles.\n\n"
+    "Word on the wire is that the REACH Program Director is taking a rare, unplugged vacation to attend the Nature Island Hiking Festival in Dominica 🇩🇲.\n\n"
+    "You have {days_remaining} Days, your laptop, a little bit of cash, and a stash of airline award miles.\n\n"
     "YOUR MISSION: Island-hop your way from NYC down the Caribbean chain to Dominica.\n\n"
     "Manage your resources, navigate real-time tropical weather, keep your morale high, and ensure your code is bug-free so you can deliver a flawless pitch!\n\n"
     "// THE JOURNEY BEGINS IN NEW YORK CITY 🇺🇸. TO GET STARTED, CHOOSE AN ACTION BELOW ..."
@@ -163,7 +205,7 @@ INTRO_MESSAGE: str = (
 REBOOT_MESSAGE: str = (
     "// GAME RESTART SEQUENCE INITIATED...\n"
     "// MEMORY CLEARED. SECURE BACKEND API CONNECTION RE-ESTABLISHED.\n\n"
-    "> SHALINI (LinkedIn REACH): Rough run, but failure is just data. Let's try this again.\n\n"
+    "> REACH PROGRAM DIRECTOR: Rough run, but failure is just data. Let's try this again.\n\n"
     + INTRO_MESSAGE
 )
 
@@ -194,13 +236,21 @@ ACTION_BASE_MESSAGES: Dict[GameAction, str] = {
 TRAVEL_MESSAGES: Dict[str, str] = {
     "ferry_sea_conditions": "> Sea Conditions: {wave_height}m waves.\n\n",
     "ferry_grounded": "> Result: SMALL CRAFT ADVISORY! Ferries grounded. (-1 Day)",
-    "ferry_success": "> Safely made it to {location_name}. (-$150, -1 Day)",
+    "ferry_success": "> Safely made it to {location_name}. (-$200, -1 Day)",
     "flight_insufficient_miles": "Insufficient Award Miles.",
     "flight_grounded": "> Result: ATC GROUND STOP! Flights canceled. (-1 Day)",
-    "flight_turbulent": "> Result: Landed in {location_name}, awful flight. (-2000 Miles, -1 Day)",
-    "flight_smooth": "> Result: Smooth flight to {location_name}. (-2000 Miles, -1 Day)",
+    "flight_turbulent": "> Result: Landed in {location_name}, awful flight. (-1000 Miles, -1 Day)",
+    "flight_smooth": "> Result: Smooth flight to {location_name}. (-1000 Miles, -1 Day)",
     "error_no_location": "No next location found.",
     "error_invalid_action": "Invalid action sequence requested.",
+}
+
+UI_MESSAGES: Dict[str, str] = {
+    "action_initiated": "> Action initiated...\n\n",
+    "invalid_action": "Invalid/unknown action. Please select from: {valid_actions_str}.",
+    "insufficient_funds": "Insufficient funds. {action} costs ${cost}.",
+    "destination_arrival": "\n\n> Destination Arrival: {message}",
+    "random_event": "\n\n> {message}",
 }
 
 # ============================================================================
@@ -212,8 +262,8 @@ STATUS_LOST: str = "SYSTEM FAILURE. Secure connection closed."
 STATUS_ACTIVE: str = "Currently in {location_name} with ${cash} cash, {award_miles} miles, {morale}% morale, {bugs} bugs, and {days_remaining} days remaining."
 
 DEFEAT_MESSAGES: Dict[str, str] = {
-    "time": "💀 DEADLINE MISSED: The hiking festival ended before you arrived. Shalini is already flying back to Silicon Valley. Your pitch will have to wait until next year.",
-    "bankrupt": "💀 INSUFFICIENT FUNDS: Your card was declined and your frequent flyer account is empty. You are officially stranded in the Caribbean.",
-    "bugs": "💀 CRITICAL FAILURE: 50+ unresolved bugs. The technical debt crashed your MVP during the demo. Shalini gave you some great architectural feedback to work on for the next cycle.",
+    "time": "💀 DEADLINE MISSED: The hiking festival ended before you arrived. The Program Director is already flying back to Silicon Valley. Your pitch will have to wait until next year.",
+    "bankrupt": "💀 INSUFFICIENT FUNDS: Your credit card was declined. You are officially stranded in the Caribbean.",
+    "bugs": "💀 CRITICAL FAILURE: 50+ unresolved bugs. The technical debt crashed your MVP during the demo. The Program Director gave you some great architectural feedback to work on for the next cycle.",
     "morale": "💀 SYSTEM OVERLOAD: Morale hit 0%. Knowing when to step away is a core engineering skill. You closed your laptop to prioritize your well-being and come back stronger tomorrow.",
 }
