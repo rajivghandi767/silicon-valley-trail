@@ -6,7 +6,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=flat&logo=docker&logoColor=white)
-![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat&logo=jenkins&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=flat&logo=githubactions&logoColor=white)
 
 **Live Demo:** [**svt.rajivwallace.com**](https://svt.rajivwallace.com)
 
@@ -54,9 +54,9 @@ Traditional text-based games heavily rely on SQL database row-locking to maintai
 
 ### CI/CD & DevOps Automation
 
-Deployments are fully automated via Jenkins Multibranch Pipelines (`Jenkinsfile` and `Jenkinsfile.deploy`).
+Deployments are fully automated via GitHub Actions (`.github/workflows`).
 
-1. **Build & Tag:** Jenkins tests the codebase, builds the `backend`, `frontend`, and `nginx` Docker images, and pushes them to the GitHub Container Registry (ghcr.io) tagged with the exact Git commit hash.
+1. **Build & Tag:** The GitHub Actions runner tests the codebase, builds the `backend`, `frontend`, and `nginx` Docker images, and pushes them to the GitHub Container Registry (ghcr.io) tagged with the exact Git commit hash.
 2. **Secret Injection:** The pipeline authenticates dynamically with **HashiCorp Vault** to securely pull and inject environment variables into the host agent.
 3. **Orchestration:** A remote SSH command pulls the latest images and executes zero-downtime updates via Docker Compose. Scheduled deployments also run daily at `02:30 AM` EST.
 
