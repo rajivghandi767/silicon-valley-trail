@@ -1,0 +1,112 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  APP_NAME: "Silicon Valley Trail"
+  REGISTRY: "ghcr.io"
+  IMAGE_BACKEND: "rajivghandi767/svt-backend"
+  IMAGE_FRONTEND: "rajivghandi767/svt-frontend"
+  IMAGE_NGINX: "rajivghandi767/svt-nginx"
+  DISCORD_SUCCESS_COLOR: "3066993"
+  DISCORD_FAIL_COLOR: "15158332"
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build & Test Backend (Python)
+        run: |
+          docker build -t svt-backend:test -f backend/Dockerfile ./backend
+          docker run --rm svt-backend:test python manage.py test
+
+      - name: Build & Test Frontend (React)
+        run: |
+          docker build -t svt-frontend:test -f frontend/Dockerfile ./frontend
+          docker run --rm svt-frontend:test npm run test
+
+  build-and-push:
+    name: Build & Push Images
+    needs: test
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import Secrets from Vault
+        id: vault-secrets
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://vault.rajivwallace.com
+          method: approle
+          roleId: ${{ secrets.VAULT_SVT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_SVT_SECRET_ID }}
+          secrets: |
+            secret/data/svt-prod VITE_API_URL | VITE_API_URL ;
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Git Commit
+        id: git-commit
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Backend
+        run: |
+          docker build -t ghcr.io/rajivghandi767/svt-backend:${{ github.run_number }} \
+                       -t ghcr.io/rajivghandi767/svt-backend:latest \
+                       --label git-commit=${{ steps.git-commit.outputs.short }} \
+                       -f backend/Dockerfile.prod ./backend
+          docker push ghcr.io/rajivghandi767/svt-backend --all-tags
+
+      - name: Build and Push Frontend
+        run: |
+          docker build -t ghcr.io/rajivghandi767/svt-frontend:${{ github.run_number }} \
+                       -t ghcr.io/rajivghandi767/svt-frontend:latest \
+                       --label git-commit=${{ steps.git-commit.outputs.short }} \
+                       --build-arg VITE_API_URL=${{ env.VITE_API_URL }} \
+                       -f frontend/Dockerfile.prod ./frontend
+          docker push ghcr.io/rajivghandi767/svt-frontend --all-tags
+
+      - name: Build and Push Nginx
+        run: |
+          docker build -t ghcr.io/rajivghandi767/svt-nginx:${{ github.run_number }} \
+                       -t ghcr.io/rajivghandi767/svt-nginx:latest \
+                       --label git-commit=${{ steps.git-commit.outputs.short }} \
+                       ./nginx
+          docker push ghcr.io/rajivghandi767/svt-nginx --all-tags
+
+  notify:
+    name: Discord Notification
+    needs: [test, build-and-push]
+    if: always()
+    runs-on: self-hosted
+    steps:
+      - name: Notify Success
+        if: ${{ needs.test.result == 'success' && (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped') }}
+        run: |
+          PAYLOAD=$(jq -n --arg title "✅ ${{ env.APP_NAME }} Build Success" \
+                          --arg desc "Build **#${{ github.run_number }}** completed successfully.\n[View GitHub Actions Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+                          --argjson color ${{ env.DISCORD_SUCCESS_COLOR }} \
+                          '{embeds: [{title: $title, description: $desc, color: $color}]}')
+          curl -s --max-time 10 -H "Content-Type: application/json" -X POST -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK_URL_GITHUB }} || true
+          
+      - name: Notify Failure
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: |
+          PAYLOAD=$(jq -n --arg title "🚨 ${{ env.APP_NAME }} Build Failed" \
+                          --arg desc "Check GitHub Actions logs for build **#${{ github.run_number }}**.\n[View GitHub Actions Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+                          --argjson color ${{ env.DISCORD_FAIL_COLOR }} \
+                          '{embeds: [{title: $title, description: $desc, color: $color}]}')
+          curl -s --max-time 10 -H "Content-Type: application/json" -X POST -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK_URL_GITHUB }} || true
