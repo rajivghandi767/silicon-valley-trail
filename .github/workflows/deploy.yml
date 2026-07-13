@@ -37,12 +37,36 @@ jobs:
           method: approle
           roleId: ${{ secrets.VAULT_SVT_ROLE_ID }}
           secretId: ${{ secrets.VAULT_SVT_SECRET_ID }}
-          secrets: |\n            secret/data/svt-prod DJANGO_SECRET_KEY | DJANGO_SECRET_KEY ;\n            secret/data/svt-prod ALLOWED_HOSTS | ALLOWED_HOSTS ;\n            secret/data/svt-prod CSRF_TRUSTED_ORIGINS | CSRF_TRUSTED_ORIGINS ;\n            secret/data/svt-prod COOKIE_DOMAIN | CSRF_COOKIE_DOMAIN ;\n            secret/data/svt-prod COOKIE_DOMAIN | SESSION_COOKIE_DOMAIN ;\n            secret/data/svt-prod POSTGRES_HOST | POSTGRES_HOST ;\n            secret/data/svt-prod POSTGRES_PORT | POSTGRES_PORT ;\n            secret/data/svt-prod POSTGRES_USER | POSTGRES_USER ;\n            secret/data/svt-prod POSTGRES_PASSWORD | POSTGRES_PASSWORD ;\n            secret/data/svt-prod POSTGRES_DB | POSTGRES_DB ;\n            secret/data/svt-prod REDIS_URL | REDIS_URL ;\n            secret/data/svt-prod DISCORD_WEBHOOK_URL | DISCORD_WEBHOOK_URL ;
+          secrets: |
+            secret/data/svt-prod DJANGO_SECRET_KEY | DJANGO_SECRET_KEY ;
+            secret/data/svt-prod ALLOWED_HOSTS | ALLOWED_HOSTS ;
+            secret/data/svt-prod CSRF_TRUSTED_ORIGINS | CSRF_TRUSTED_ORIGINS ;
+            secret/data/svt-prod COOKIE_DOMAIN | CSRF_COOKIE_DOMAIN ;
+            secret/data/svt-prod COOKIE_DOMAIN | SESSION_COOKIE_DOMAIN ;
+            secret/data/svt-prod POSTGRES_HOST | POSTGRES_HOST ;
+            secret/data/svt-prod POSTGRES_PORT | POSTGRES_PORT ;
+            secret/data/svt-prod POSTGRES_USER | POSTGRES_USER ;
+            secret/data/svt-prod POSTGRES_PASSWORD | POSTGRES_PASSWORD ;
+            secret/data/svt-prod POSTGRES_DB | POSTGRES_DB ;
+            secret/data/svt-prod REDIS_URL | REDIS_URL ;
+            secret/data/svt-prod DISCORD_WEBHOOK_URL | DISCORD_WEBHOOK_URL ;
 
       - name: Generate .env.prod
         run: |
           CURRENT_TAG="${{ github.event.inputs.TAG_TO_DEPLOY || 'latest' }}"
-          echo "IMAGE_TAG='${CURRENT_TAG}'" > .env.prod\n          echo \"DJANGO_SECRET_KEY='${{ env.DJANGO_SECRET_KEY }}'\" >> .env.prod\n          echo \"ALLOWED_HOSTS='${{ env.ALLOWED_HOSTS }}'\" >> .env.prod\n          echo \"CSRF_TRUSTED_ORIGINS='${{ env.CSRF_TRUSTED_ORIGINS }}'\" >> .env.prod\n          echo \"CSRF_COOKIE_DOMAIN='${{ env.CSRF_COOKIE_DOMAIN }}'\" >> .env.prod\n          echo \"SESSION_COOKIE_DOMAIN='${{ env.SESSION_COOKIE_DOMAIN }}'\" >> .env.prod\n          echo \"POSTGRES_HOST='${{ env.POSTGRES_HOST }}'\" >> .env.prod\n          echo \"POSTGRES_PORT='${{ env.POSTGRES_PORT }}'\" >> .env.prod\n          echo \"POSTGRES_USER='${{ env.POSTGRES_USER }}'\" >> .env.prod\n          echo \"POSTGRES_PASSWORD='${{ env.POSTGRES_PASSWORD }}'\" >> .env.prod\n          echo \"POSTGRES_DB='${{ env.POSTGRES_DB }}'\" >> .env.prod\n          echo \"REDIS_URL='${{ env.REDIS_URL }}'\" >> .env.prod\n          echo \"DISCORD_WEBHOOK_URL='${{ env.DISCORD_WEBHOOK_URL }}'\" >> .env.prod
+          echo "IMAGE_TAG='${CURRENT_TAG}'" > .env.prod
+          echo "DJANGO_SECRET_KEY='${{ env.DJANGO_SECRET_KEY }}'" >> .env.prod
+          echo "ALLOWED_HOSTS='${{ env.ALLOWED_HOSTS }}'" >> .env.prod
+          echo "CSRF_TRUSTED_ORIGINS='${{ env.CSRF_TRUSTED_ORIGINS }}'" >> .env.prod
+          echo "CSRF_COOKIE_DOMAIN='${{ env.CSRF_COOKIE_DOMAIN }}'" >> .env.prod
+          echo "SESSION_COOKIE_DOMAIN='${{ env.SESSION_COOKIE_DOMAIN }}'" >> .env.prod
+          echo "POSTGRES_HOST='${{ env.POSTGRES_HOST }}'" >> .env.prod
+          echo "POSTGRES_PORT='${{ env.POSTGRES_PORT }}'" >> .env.prod
+          echo "POSTGRES_USER='${{ env.POSTGRES_USER }}'" >> .env.prod
+          echo "POSTGRES_PASSWORD='${{ env.POSTGRES_PASSWORD }}'" >> .env.prod
+          echo "POSTGRES_DB='${{ env.POSTGRES_DB }}'" >> .env.prod
+          echo "REDIS_URL='${{ env.REDIS_URL }}'" >> .env.prod
+          echo "DISCORD_WEBHOOK_URL='${{ env.DISCORD_WEBHOOK_URL }}'" >> .env.prod
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
