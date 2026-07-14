@@ -55,7 +55,7 @@ Traditional text-based games heavily rely on SQL database row-locking to maintai
 ### CI/CD & DevOps Automation
 
 > [!NOTE]
-> **CI/CD Evolution:** This project was recently migrated from a centralized Jenkins/JVM monolith to a decentralized **GitHub Actions** edge runner to optimize compute overhead and security. 
+> **CI/CD Evolution:** This project is deployed using a decentralized **GitHub Actions** edge runner, having migrated from a legacy Jenkins/JVM monolith to optimize compute overhead and security. 
 > The legacy Groovy pipelines have been preserved for historical context in the [`archive/jenkins-pipeline`](https://github.com/rajivghandi767/silicon-valley-trail/tree/archive/jenkins-pipeline) branch.
 
 Deployments are fully automated via GitHub Actions (`.github/workflows`).
