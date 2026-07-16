@@ -71,7 +71,7 @@ jobs:
           docker build -t ghcr.io/rajivghandi767/svt-frontend:${{ github.run_number }} \
                        -t ghcr.io/rajivghandi767/svt-frontend:latest \
                        --label git-commit=${{ steps.git-commit.outputs.short }} \
-                       --build-arg VITE_API_URL=/api \
+                       --build-arg VITE_API_URL=https://svt-api.rajivwallace.com \
                        -f frontend/Dockerfile.prod ./frontend
           docker push ghcr.io/rajivghandi767/svt-frontend --all-tags
 
