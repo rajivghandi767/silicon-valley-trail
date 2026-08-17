@@ -2,7 +2,7 @@ name: Scheduled Deployment
 
 on:
   schedule:
-    - cron: '30 5 * * *'
+    - cron: '30 6 * * *'
   workflow_dispatch:
     inputs:
       TAG_TO_DEPLOY:
