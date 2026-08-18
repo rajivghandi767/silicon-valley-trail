@@ -1,8 +1,6 @@
-name: Scheduled Deployment
+name: Deployment Pipeline
 
 on:
-  schedule:
-    - cron: '30 6 * * *'
   workflow_dispatch:
     inputs:
       TAG_TO_DEPLOY:
