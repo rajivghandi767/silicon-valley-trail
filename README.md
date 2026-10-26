@@ -50,7 +50,7 @@ Traditional text-based games heavily rely on SQL database row-locking to maintai
 - **Data Layer:** PostgreSQL (persistent data) & Redis (session caching).
 - **External Integrations:** Open-Meteo APIs (Dynamic real-time marine and aviation forecasting dictating travel risk algorithms).
 - **Network Security:** Nginx handles CORS interception via `$http_origin` maps, dropping unauthorized `OPTIONS` requests natively to conserve Gunicorn worker cycles. Dedicated rate-limiting zones protect API routes.
-- **Dependency Management:** Python dependencies are deterministically managed via `pip-tools`. Strict separation is enforced between lightweight production packages (`requirements.txt`) and testing/local middleware (`dev-requirements.txt`).
+- **Dependency Management:** Python dependencies are deterministically managed via `uv` (`pyproject.toml` and `uv.lock`). Strict separation is enforced between lightweight production dependency groups (`prod`) and testing/local middleware (`dev`).
 
 ### CI/CD & DevOps Automation
 
