@@ -1,0 +1,22 @@
+[project]
+name = "silicon-valley-trail-backend"
+version = "0.1.0"
+description = "Backend API and Game Engine for Silicon Valley Trail"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=5.2,<6.0",
+    "django-prometheus",
+    "django-redis",
+]
+
+[dependency-groups]
+prod = [
+    "gunicorn",
+    "psycopg",
+]
+dev = [
+    "django-cors-headers",
+    "psycopg[binary]",
+    "pytest",
+    "pytest-django",
+]
