@@ -1,4 +1,5 @@
-from django.http import JsonResponse
+from typing import Any
+from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
@@ -9,15 +10,16 @@ import os
 
 @csrf_exempt
 @require_http_methods(["GET"])
-def health_detailed(request):
+def health_detailed(request: HttpRequest) -> JsonResponse:
     """
     Comprehensive health check for production monitoring
     """
-    health_data = {
+    checks: dict[str, dict[str, str]] = {}
+    health_data: dict[str, Any] = {
         "status": "healthy",
         "timestamp": time.time(),
         "service": "svt-backend",
-        "checks": {},
+        "checks": checks,
     }
 
     overall_status = 200
@@ -27,23 +29,23 @@ def health_detailed(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        health_data["checks"]["database"] = {"status": "healthy"}
+        checks["database"] = {"status": "healthy"}
     except Exception as e:
-        health_data["checks"]["database"] = {"status": "unhealthy", "error": str(e)}
+        checks["database"] = {"status": "unhealthy", "error": str(e)}
         overall_status = 503
 
     # Static files check
     try:
         static_root = getattr(settings, "STATIC_ROOT", None)
         if static_root and os.path.exists(static_root):
-            health_data["checks"]["static_files"] = {"status": "healthy"}
+            checks["static_files"] = {"status": "healthy"}
         else:
-            health_data["checks"]["static_files"] = {
+            checks["static_files"] = {
                 "status": "warning",
                 "message": "static files not found",
             }
     except Exception as e:
-        health_data["checks"]["static_files"] = {"status": "unhealthy", "error": str(e)}
+        checks["static_files"] = {"status": "unhealthy", "error": str(e)}
 
     # Set overall status
     if overall_status != 200:
@@ -54,7 +56,7 @@ def health_detailed(request):
 
 @csrf_exempt
 @require_http_methods(["GET"])
-def health_simple(request):
+def health_simple(request: HttpRequest) -> JsonResponse:
     """
     Simple health check for load balancers and Docker healthchecks
     """

@@ -1,14 +1,16 @@
 # backend/game/models.py
 from django.db import models
+from .engine.constants import EXTERNAL_HTTP_TIMEOUT
 
 
 class Location(models.Model):
-    RESOURCE_CHOICES = [
-        ("morale", "Morale"),
-        ("cash", "Cash"),
-        ("award_miles", "Award Miles"),
-        ("bugs", "Bugs (Reduction)"),
-    ]
+    class ResourceChoices(models.TextChoices):
+        MORALE = "morale", "Morale"
+        CASH = "cash", "Cash"
+        AWARD_MILES = "award_miles", "Award Miles"
+        BUGS = "bugs", "Bugs (Reduction)"
+
+    RESOURCE_CHOICES = ResourceChoices.choices
 
     name = models.CharField(
         max_length=255, help_text="The name of the island/stop along the journey."
@@ -37,12 +39,14 @@ class Location(models.Model):
 
 
 class ReportedIssue(models.Model):
-    ISSUE_TYPES = [
-        ("game_logic", "Game Logic / Math Error"),
-        ("ui_bug", "UI / Display Glitch"),
-        ("typo", "Typo / Spelling Error"),
-        ("other", "Other Exception"),
-    ]
+    class IssueTypeChoices(models.TextChoices):
+        GAME_LOGIC = "game_logic", "Game Logic / Math Error"
+        UI_BUG = "ui_bug", "UI / Display Glitch"
+        TYPO = "typo", "Typo / Spelling Error"
+        OTHER = "other", "Other Exception"
+
+    ISSUE_TYPES = IssueTypeChoices.choices
+
     issue_type = models.CharField(max_length=50, choices=ISSUE_TYPES)
     user_note = models.TextField()
     resolved = models.BooleanField(default=False)
@@ -52,7 +56,7 @@ class ReportedIssue(models.Model):
         issue_display = dict(self.ISSUE_TYPES).get(self.issue_type, self.issue_type)
         return f"[{issue_display}] - {'Resolved' if self.resolved else 'Pending'}"
 
-    def send_notifications(self):
+    def send_notifications(self) -> bool:
         import json
         import urllib.request
         import urllib.error
@@ -75,7 +79,7 @@ class ReportedIssue(models.Model):
                 method="POST",
             )
             try:
-                urllib.request.urlopen(req, timeout=3)
+                urllib.request.urlopen(req, timeout=EXTERNAL_HTTP_TIMEOUT)
                 return True
             except urllib.error.URLError as e:
                 print(f"⚠️ [WEBHOOK ERROR] Failed to route to Discord: {e}")

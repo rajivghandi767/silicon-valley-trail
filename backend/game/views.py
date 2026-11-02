@@ -10,11 +10,14 @@ from .engine.constants import (
     REBOOT_MESSAGE,
     VICTORY_MESSAGE,
     SESSION_RESTORED_MESSAGE,
+    GAME_SESSION_TTL,
+    STARTING_LOCATION_ID,
+    MAX_REPORT_NOTE_LENGTH,
+    REPORT_RATE_LIMIT_MAX,
+    REPORT_RATE_LIMIT_WINDOW,
 )
 from .engine.state import CacheGameState
 from .engine.actions import process_turn
-
-GAME_SESSION_TTL = 86400
 
 
 def get_session_cache_key(request: HttpRequest) -> str:
@@ -54,7 +57,7 @@ def get_state(request: HttpRequest) -> JsonResponse:
     # Auto-initialize a new game if one isn't found instead of throwing a 404.
     # This ensures a seamless onboarding experience for first-time visitors.
     if not game:
-        game = CacheGameState(current_location_id=1)
+        game = CacheGameState(current_location_id=STARTING_LOCATION_ID)
         cache.set(cache_key, game, timeout=GAME_SESSION_TTL)
 
         response_data = game.serialize_for_api()
@@ -152,7 +155,7 @@ def take_action(request: HttpRequest) -> JsonResponse:
 def restart_game(request: HttpRequest) -> JsonResponse:
     cache_key = get_session_cache_key(request)
 
-    new_game = CacheGameState(current_location_id=1)
+    new_game = CacheGameState(current_location_id=STARTING_LOCATION_ID)
     cache.set(cache_key, new_game, timeout=GAME_SESSION_TTL)
 
     response_data = new_game.serialize_for_api()
@@ -162,13 +165,54 @@ def restart_game(request: HttpRequest) -> JsonResponse:
 
 @require_http_methods(["POST"])
 def submit_report(request: HttpRequest) -> JsonResponse:
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    client_ip = (
+        x_forwarded_for.split(",")[0].strip()
+        if x_forwarded_for
+        else request.META.get("REMOTE_ADDR", "unknown")
+    )
+    rate_key = f"svt_report_rate_{client_ip}"
+    current_count = cache.get(rate_key, 0)
+    if isinstance(current_count, int) and current_count >= REPORT_RATE_LIMIT_MAX:
+        return JsonResponse(
+            {"error": "Rate limit exceeded. Please try again later."},
+            status=429,
+        )
+
     try:
         data = json.loads(request.body)
-        raw_issue_type = data.get("issue_type", "other")
-        user_note = data.get("user_note", "")
+        if not isinstance(data, dict):
+            return JsonResponse({"error": "Invalid JSON payload."}, status=400)
+
+        raw_issue_type = data.get("issue_type", ReportedIssue.IssueTypeChoices.OTHER)
+        if (
+            not isinstance(raw_issue_type, str)
+            or raw_issue_type not in ReportedIssue.IssueTypeChoices.values
+        ):
+            return JsonResponse({"error": "Invalid issue type."}, status=400)
+
+        raw_note = data.get("user_note", "")
+        if not isinstance(raw_note, str):
+            return JsonResponse({"error": "Invalid note format."}, status=400)
+
+        user_note = raw_note.strip()
+        if not user_note:
+            return JsonResponse({"error": "Report note cannot be empty."}, status=400)
+        if len(user_note) > MAX_REPORT_NOTE_LENGTH:
+            return JsonResponse(
+                {
+                    "error": f"Report note cannot exceed {MAX_REPORT_NOTE_LENGTH} characters."
+                },
+                status=400,
+            )
 
         issue = ReportedIssue.objects.create(
             issue_type=raw_issue_type, user_note=user_note
+        )
+        cache.set(
+            rate_key,
+            (current_count if isinstance(current_count, int) else 0) + 1,
+            timeout=REPORT_RATE_LIMIT_WINDOW,
         )
         issue.send_notifications()
 

@@ -20,7 +20,6 @@ env:
   DEPLOY_HOST: "10.100.10.5"
   DEPLOY_DIR: "/opt/homelab-iac/services/apps/silicon-valley-trail"
   IMAGE_BACKEND: "rajivghandi767/svt-backend"
-  IMAGE_FRONTEND: "rajivghandi767/svt-frontend"
   IMAGE_NGINX: "rajivghandi767/svt-nginx"
   DISCORD_SUCCESS_COLOR: "3066993"
   DISCORD_SKIP_COLOR: "3447003"
@@ -140,7 +139,7 @@ jobs:
         run: |
           TIMESTAMP=$(python3 -c "from datetime import datetime,timezone,timedelta; u=datetime.now(timezone.utc); y=u.year; nxt=lambda d,w: d+timedelta(days=(w-d.weekday())%7); s=nxt(datetime(y,3,8),6); e=nxt(datetime(y,11,1),6); o,l=(-4,'EDT') if s<=u.replace(tzinfo=None)<e else (-5,'EST'); print((u+timedelta(hours=o)).strftime(f'%a, %d %b %Y at %H:%M {l}'))")
           if [ "${{ steps.deploy.outputs.status }}" == "UPDATED" ]; then
-              printf -v DESC ":unicorn: **${{ env.APP_NAME }} Update Deployed**\n**:new: New Version Live:**\n• **Tag:** ${{ github.event.inputs.TAG_TO_DEPLOY || 'latest' }}\n• **Backend:** ${{ env.IMAGE_BACKEND }}\n• **Frontend:** ${{ env.IMAGE_FRONTEND }}\n• **Nginx:** ${{ env.IMAGE_NGINX }}\n\n:bar_chart: **Status:** Healthy\n:clock4: **Time:** $TIMESTAMP"
+              printf -v DESC ":unicorn: **${{ env.APP_NAME }} Update Deployed**\n**:new: New Version Live:**\n• **Tag:** ${{ github.event.inputs.TAG_TO_DEPLOY || 'latest' }}\n• **Backend:** ${{ env.IMAGE_BACKEND }}\n• **Nginx (SPA + Proxy):** ${{ env.IMAGE_NGINX }}\n\n:bar_chart: **Status:** Healthy\n:clock4: **Time:** $TIMESTAMP"
               PAYLOAD=$(jq -n --arg title "🚀 Deployment Successful" \
                               --arg desc "$DESC" \
                               --argjson color ${{ env.DISCORD_SUCCESS_COLOR }} \

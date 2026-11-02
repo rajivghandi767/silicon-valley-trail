@@ -1,10 +1,15 @@
 import json
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.core.cache import cache
 
-from .models import Location
+from .models import Location, ReportedIssue
+from .engine.constants import (
+    CRITICAL_THRESHOLDS,
+    MAX_REPORT_NOTE_LENGTH,
+    REPORT_RATE_LIMIT_MAX,
+)
 from .engine.state import CacheGameState
 
 
@@ -74,6 +79,7 @@ class GameMechanicsTests(TestCase):
         data = json.loads(response.content)
         self.assertEqual(data["cash"], 2500)
         self.assertEqual(data["current_location"], "New York City")
+        self.assertEqual(data["max_bugs"], CRITICAL_THRESHOLDS["BUGS"])
         self.assertFalse(data["is_won"])
 
     def test_stationary_action_rest(self) -> None:
@@ -98,7 +104,7 @@ class GameMechanicsTests(TestCase):
     @patch("game.engine.actions.check_aviation_conditions")
     @patch("game.engine.events.random.choices")
     def test_successful_flight_with_mocked_api(
-        self, mock_choices, mock_weather
+        self, mock_choices: MagicMock, mock_weather: MagicMock
     ) -> None:
         # 1. Mock the Weather API
         mock_weather.return_value = (False, False)
@@ -138,7 +144,9 @@ class GameMechanicsTests(TestCase):
 
     @patch("game.engine.actions.check_aviation_conditions")
     @patch("game.engine.events.random.choices")
-    def test_victory_condition(self, mock_choices, mock_weather) -> None:
+    def test_victory_condition(
+        self, mock_choices: MagicMock, mock_weather: MagicMock
+    ) -> None:
         mock_weather.return_value = (False, False)
         mock_choices.return_value = [{"impacts": {}, "text": "Mocked Event"}]
 
@@ -160,3 +168,48 @@ class GameMechanicsTests(TestCase):
         data = json.loads(response.content)
         self.assertIn("VICTORY", data.get("message", ""))
         self.assertIn("Dominica", data.get("message", ""))
+
+    def test_submit_report_valid_and_validation(self) -> None:
+        # 1. Valid report
+        valid_res = self.client.post(
+            reverse("submit_report"),
+            data=json.dumps({"issue_type": "ui_bug", "user_note": "Button misaligned"}),
+            content_type="application/json",
+        )
+        self.assertEqual(valid_res.status_code, 200)
+        self.assertEqual(ReportedIssue.objects.count(), 1)
+
+        # 2. Invalid issue_type rejected
+        invalid_type_res = self.client.post(
+            reverse("submit_report"),
+            data=json.dumps({"issue_type": "sql_injection", "user_note": "Test note"}),
+            content_type="application/json",
+        )
+        self.assertEqual(invalid_type_res.status_code, 400)
+
+        # 3. Empty note rejected
+        empty_note_res = self.client.post(
+            reverse("submit_report"),
+            data=json.dumps({"issue_type": "other", "user_note": "   "}),
+            content_type="application/json",
+        )
+        self.assertEqual(empty_note_res.status_code, 400)
+
+        # 4. Over-length note rejected
+        long_note_res = self.client.post(
+            reverse("submit_report"),
+            data=json.dumps(
+                {"issue_type": "other", "user_note": "x" * (MAX_REPORT_NOTE_LENGTH + 1)}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(long_note_res.status_code, 400)
+
+    def test_submit_report_rate_limiting(self) -> None:
+        cache.set("svt_report_rate_127.0.0.1", REPORT_RATE_LIMIT_MAX, timeout=3600)
+        rate_limited_res = self.client.post(
+            reverse("submit_report"),
+            data=json.dumps({"issue_type": "typo", "user_note": "Rate limited note"}),
+            content_type="application/json",
+        )
+        self.assertEqual(rate_limited_res.status_code, 429)

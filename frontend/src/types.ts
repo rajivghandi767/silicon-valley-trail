@@ -14,6 +14,7 @@ export interface GameState {
     award_miles: number;
     morale: number;
     bugs: number;
+    max_bugs?: number;
     days_remaining: number;
     is_won: boolean;
     is_lost: boolean;
