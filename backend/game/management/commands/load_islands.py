@@ -1,16 +1,27 @@
 # backend/game/management/commands/load_islands.py
+from typing import Any, TypedDict
 from django.core.management.base import BaseCommand
 from game.models import Location
 from django.core.cache import cache
 
 
+class StopData(TypedDict):
+    name: str
+    latitude: float
+    longitude: float
+    description: str
+    reward_resource: str
+    reward_amount: int
+    reward_message: str
+
+
 class Command(BaseCommand):
     help = "Load initial island data into the database"
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         Location.objects.all().delete()
 
-        stops_along_journey = [
+        stops_along_journey: list[StopData] = [
             {
                 "name": "New York City 🇺🇸",
                 "latitude": 40.6413,

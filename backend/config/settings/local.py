@@ -76,7 +76,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": str(BASE_DIR / "db.sqlite3"),
         }
     }
 
@@ -84,14 +84,16 @@ else:
 # CACHING FALLBACK LOGIC
 # ============================================================================
 REDIS_URL = os.getenv("REDIS_URL")
-redis_host, redis_port = None, None
+redis_host: str | None = None
+redis_port: int | None = None
 
-try:
-    parsed_url = urlparse(REDIS_URL)
-    redis_host = parsed_url.hostname
-    redis_port = parsed_url.port or 6379
-except ValueError:
-    pass
+if REDIS_URL:
+    try:
+        parsed_url = urlparse(REDIS_URL)
+        redis_host = parsed_url.hostname
+        redis_port = parsed_url.port or 6379
+    except ValueError:
+        pass
 
 if is_service_available(redis_host, redis_port):
     print(f"✅ Connected to Redis at {redis_host}:{redis_port}")

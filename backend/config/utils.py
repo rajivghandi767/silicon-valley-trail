@@ -2,7 +2,9 @@ import socket
 from contextlib import closing
 
 
-def is_service_available(host: str, port: int, timeout: int = 1) -> bool:
+def is_service_available(
+    host: str | None, port: int | str | None, timeout: int = 1
+) -> bool:
     """
     Executes a socket connection test to verify if downstream services
     (like Postgres or Redis) are actively accepting connections.

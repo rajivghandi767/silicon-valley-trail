@@ -46,24 +46,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # SVT Frontend
-  svt-frontend:
-    image: ghcr.io/rajivghandi767/svt-frontend:${IMAGE_TAG:-latest}
-    container_name: svt-frontend
-    restart: unless-stopped
-    networks:
-      - core
-      - svt
-    depends_on:
-      svt-backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Dedicated Nginx for SVT
+  # Dedicated Nginx for SVT (Serves React SPA + Reverse Proxies API)
   svt-nginx:
     image: ghcr.io/rajivghandi767/svt-nginx:${IMAGE_TAG:-latest}
     container_name: svt-nginx
@@ -73,8 +56,6 @@ services:
       - svt
     depends_on:
       svt-backend:
-        condition: service_healthy
-      svt-frontend:
         condition: service_healthy
     volumes:
       - svt_static:/usr/share/nginx/html/static:ro

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const API_BASE_URL: string = String(import.meta.env.VITE_API_URL ?? "");
 
 function getCookie(name: string): string {
   let cookieValue = "";
@@ -56,7 +56,11 @@ export async function apiFetch<T>(
   const data = isJson ? ((await response.json()) as Record<string, unknown>) : {};
 
   if (!response.ok) {
-    const errorMsg = (data as { error?: string }).error || `HTTP error! status: ${response.status}`;
+    const errorVal = data.error;
+    const errorMsg =
+      typeof errorVal === "string" && errorVal
+        ? errorVal
+        : `HTTP error! status: ${response.status}`;
     throw new Error(errorMsg);
   }
 

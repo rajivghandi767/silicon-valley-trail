@@ -1,3 +1,4 @@
+from typing import Any
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from game.models import Location
@@ -6,7 +7,7 @@ from game.models import Location
 class Command(BaseCommand):
     help = "Seeds initial database data"
 
-    def handle(self, *args, **kwargs):
+    def handle(self, *args: Any, **kwargs: Any) -> None:
         self.stdout.write("🧹 Wiping existing data to ensure a fresh state...")
         Location.objects.all().delete()
 

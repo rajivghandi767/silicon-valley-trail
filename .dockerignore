@@ -1,0 +1,11 @@
+.git
+.gitignore
+.github
+.env*
+backend
+docs
+*.md
+**/node_modules
+**/dist
+**/.vite
+**/*.tsbuildinfo

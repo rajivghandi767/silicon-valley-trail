@@ -25,10 +25,11 @@ Following a technical pair-programming session, this codebase underwent a compre
 
 - **Redis Game Session Caching:** Transitioned temporary game state management to Redis caching, completely bypassing SQL row contention (see Technical Architecture below).
 - **Separation of Concerns ("Fat Models, Skinny Views"):** Decoupled the monolithic `views.py`. Complex external API logic (weather routing) is now abstracted into a dedicated `services` layer, and state mutations are handled by an isolated `engine`.
-- **Security Hardening:** Removed the development-phase `@csrf_exempt` decorators. The application now executes a full CSRF handshake between the React SPA and Django via `@ensure_csrf_cookie` and strict `X-CSRFToken` header validation.
+- **Security Hardening:** Removed the development-phase `@csrf_exempt` decorators. The application now executes a full CSRF handshake between the React SPA and Django via `@ensure_csrf_cookie` and strict `X-CSRFToken` header validation, alongside strict schema validation and IP-based Redis rate limiting on the issue reporting endpoint (`/api/reports/`).
 - **Database Modernization:** Migrated the data layer from SQLite to a dedicated, containerized PostgreSQL instance to support highly concurrent transactions.
-- **Clean Code & Maintainability:** Eradicated "magic numbers" across the backend by centralizing configurations and narrative strings into dedicated constant files.
-- **Gameplay & UX Rebalancing:** Introduced positive random events for successful turns to improve player progression, and overhauled the frontend CSS to ensure the game is fully responsive and playable on mobile screens.
+- **Clean Code, Static Typing & Maintainability:** Eradicated "magic numbers" across the backend and frontend by centralizing configurations, weather thresholds, and narrative strings into dedicated constant files (`game/engine/constants.py`), and enforced strict static typing across the stack (`mypy` + `django-stubs` on the backend; strict type-checked `@typescript-eslint` across `src/` and test suites on the frontend).
+- **Single-Nginx Production Consolidation:** Consolidated the production frontend and reverse proxy into a single multi-stage `svt-nginx` container that serves the compiled React SPA directly from disk and reverse-proxies API/Admin traffic to Gunicorn, while preserving a decoupled hot-reloading container topology in local development (`docker-compose.yml`).
+- **Gameplay & UX Rebalancing:** Introduced positive random events for successful turns to improve player progression, deduplicated cross-component portfolio metadata fetches, and overhauled the frontend CSS to ensure the game is fully responsive and playable on mobile screens.
 
 ---
 
@@ -60,7 +61,7 @@ Traditional text-based games heavily rely on SQL database row-locking to maintai
 
 Deployments are fully automated via GitHub Actions (`.github/workflows`).
 
-1. **Build & Tag:** The GitHub Actions runner tests the codebase, builds the `backend`, `frontend`, and `nginx` Docker images, and pushes them to the GitHub Container Registry (ghcr.io) tagged with the exact Git commit hash.
+1. **Build & Tag:** The GitHub Actions runner tests the codebase, builds the production `svt-backend` and multi-stage `svt-nginx` (embedding the compiled React SPA) Docker images, and pushes them to the GitHub Container Registry (ghcr.io) tagged with the exact Git commit hash and run number.
 2. **Secret Injection:** The pipeline authenticates dynamically with **HashiCorp Vault** to securely pull and inject environment variables into the host agent.
 3. **Orchestration:** A remote SSH command pulls the latest images and executes zero-downtime updates via Docker Compose. Scheduled deployments also run daily at `02:30 AM` EST.
 

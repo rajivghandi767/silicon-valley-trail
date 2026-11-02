@@ -2,7 +2,19 @@
 from typing import Optional, Dict, Any
 from django.core.cache import cache
 from ..models import Location
-from .constants import STATUS_WON, STATUS_LOST, STATUS_ACTIVE, DEFEAT_MESSAGES, WARNING_THRESHOLDS, STARTING_FIXED_STATS, DYNAMIC_RESOURCE_MULTIPLIERS, CRITICAL_THRESHOLDS, BOUNDARY_LIMITS, STARTING_LOCATION_ID
+from .constants import (
+    STATUS_WON,
+    STATUS_LOST,
+    STATUS_ACTIVE,
+    DEFEAT_MESSAGES,
+    WARNING_THRESHOLDS,
+    STARTING_FIXED_STATS,
+    DYNAMIC_RESOURCE_MULTIPLIERS,
+    CRITICAL_THRESHOLDS,
+    BOUNDARY_LIMITS,
+    STARTING_LOCATION_ID,
+    TRAVEL_IMPACTS,
+)
 
 
 class CacheGameState:
@@ -77,7 +89,6 @@ class CacheGameState:
             return True
         if self.bugs >= CRITICAL_THRESHOLDS["BUGS"]:
             return True
-        from .constants import TRAVEL_IMPACTS
         if self.cash <= CRITICAL_THRESHOLDS["CASH"] and self.award_miles < TRAVEL_IMPACTS["flight_cost_threshold"]:
             return True
         return False
@@ -104,7 +115,6 @@ class CacheGameState:
         stops_remaining = self.total_stops - self.current_location_id
         if self.days_remaining < stops_remaining:
             return DEFEAT_MESSAGES["time"]
-        from .constants import TRAVEL_IMPACTS
         if self.cash <= CRITICAL_THRESHOLDS["CASH"] and self.award_miles < TRAVEL_IMPACTS["flight_cost_threshold"]:
             return DEFEAT_MESSAGES["bankrupt"]
         if self.bugs >= CRITICAL_THRESHOLDS["BUGS"]:
@@ -123,7 +133,7 @@ class CacheGameState:
         if the cache misses.
         """
 
-        def fetch_loc():
+        def fetch_loc() -> Optional[Location]:
             return Location.objects.filter(
                 sequence_in_journey=self.current_location_id
             ).first()
@@ -138,6 +148,7 @@ class CacheGameState:
             "award_miles": self.award_miles,
             "morale": self.morale,
             "bugs": self.bugs,
+            "max_bugs": CRITICAL_THRESHOLDS["BUGS"],
             "days_remaining": self.days_remaining,
         }
 
@@ -167,6 +178,7 @@ class CacheGameState:
             "award_miles": self.award_miles,
             "morale": self.morale,
             "bugs": self.bugs,
+            "max_bugs": CRITICAL_THRESHOLDS["BUGS"],
             "days_remaining": self.days_remaining,
             "is_lost": self.is_lost,
             "is_won": self.is_won,

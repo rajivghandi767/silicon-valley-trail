@@ -7,14 +7,7 @@ import eslintReact from "@eslint-react/eslint-plugin";
 
 export default tseslint.config(
   {
-    ignores: [
-      "dist",
-      "src/test/**/*",
-      "src/**/*.test.ts",
-      "src/**/*.test.tsx",
-      "src/**/*.spec.ts",
-      "src/**/*.spec.tsx"
-    ]
+    ignores: ["dist"]
   },
   {
     extends: [
@@ -44,21 +37,14 @@ export default tseslint.config(
       ],
       ...eslintReact.configs.recommended.rules,
       
-      // Relax rules for API payloads and any assignments
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-argument": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-floating-promises": "off",
+      // Strict type-checked rules enforced across src and test files
       "@typescript-eslint/prefer-nullish-coalescing": "off",
       "@typescript-eslint/no-empty-function": "off",
-      "@typescript-eslint/no-misused-promises": "off",
       "@eslint-react/set-state-in-effect": "off",
       "react-hooks/set-state-in-effect": "off",
 
       // Additional relaxations for upgrading existing codebase
       "@typescript-eslint/no-inferrable-types": "off",
-      "@typescript-eslint/no-unnecessary-type-assertion": "off",
       "@typescript-eslint/non-nullable-type-assertion-style": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       "prefer-const": "off",

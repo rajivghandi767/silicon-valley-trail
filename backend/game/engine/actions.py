@@ -68,7 +68,7 @@ def process_turn(game: Any, raw_action: str) -> Tuple[str, Optional[str]]:
         case a if a in TRAVEL_ACTIONS:
             next_seq = game.current_location_id + 1
 
-            def fetch_next_loc():
+            def fetch_next_loc() -> Optional[Location]:
                 return Location.objects.filter(sequence_in_journey=next_seq).first()
 
             next_location = cache.get_or_set(

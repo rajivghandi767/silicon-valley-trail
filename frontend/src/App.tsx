@@ -7,7 +7,7 @@ import { LazySection } from "./components/LazySection";
 import { usePortfolioData } from "./hooks/usePortfolioData";
 import "./index.css";
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string): string => {
     switch (status) {
         case "critical": return "var(--accent-red)";
         case "warning": return "var(--accent-orange)";
@@ -206,7 +206,7 @@ function App() {
             className="stat-value"
             style={{ color: getStatusColor(gameState.stat_statuses.bugs) }}
           >
-            {gameState.bugs} / 50
+            {gameState.bugs} / {gameState.max_bugs ?? 50}
           </span>
         </div>
 
@@ -235,7 +235,7 @@ function App() {
           </h1>
           <div className="header-controls">
             <button
-              onClick={() => handleRestart()}
+              onClick={() => void handleRestart()}
               className="restart-btn"
               title="Restart Game"
             >
@@ -261,7 +261,7 @@ function App() {
           <div className="button-group">
             <button
               className="action-btn"
-              onClick={() => handleAction("code")}
+              onClick={() => void handleAction("code")}
               disabled={isLoading || isGameOver}
             >
               <span className="btn-emoji">💻</span>
@@ -269,7 +269,7 @@ function App() {
             </button>
             <button
               className="action-btn"
-              onClick={() => handleAction("mentor")}
+              onClick={() => void handleAction("mentor")}
               disabled={isLoading || isGameOver}
             >
               <span className="btn-emoji">🤝🏽</span>
@@ -277,7 +277,7 @@ function App() {
             </button>
             <button
               className="action-btn"
-              onClick={() => handleAction("rest")}
+              onClick={() => void handleAction("rest")}
               disabled={isLoading || isGameOver}
             >
               <span className="btn-emoji">🛌</span>
@@ -288,7 +288,7 @@ function App() {
 
             <button
               className="action-btn fly"
-              onClick={() => handleAction("travel_ferry")}
+              onClick={() => void handleAction("travel_ferry")}
               disabled={isLoading || isGameOver}
             >
               <span className="btn-emoji">⛴️</span>
@@ -296,7 +296,7 @@ function App() {
             </button>
             <button
               className="action-btn fly"
-              onClick={() => handleAction("travel_flight")}
+              onClick={() => void handleAction("travel_flight")}
               disabled={isLoading || isGameOver}
             >
               <span className="btn-emoji">✈️</span>
@@ -315,7 +315,7 @@ function App() {
           </span>
           <span className="footer-links">
             <a
-              href={info?.github_url || "https://github.com/rajivghandi767"}
+              href={info?.github || info?.github_url || "https://github.com/rajivghandi767"}
               target="_blank"
               rel="noreferrer"
             >
@@ -357,7 +357,7 @@ function App() {
               </button>
               <button
                 type="button"
-                onClick={() => handleRestart(true)}
+                onClick={() => void handleRestart(true)}
                 disabled={isLoading}
                 className="action-btn"
                 style={{ flexDirection: "row", borderColor: "var(--accent-orange)", color: "var(--accent-orange)" }}

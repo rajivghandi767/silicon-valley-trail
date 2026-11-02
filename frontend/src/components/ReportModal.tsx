@@ -20,7 +20,7 @@ export function ReportModal() {
     return () => clearTimeout(timeoutId);
   }, [success]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -83,7 +83,7 @@ export function ReportModal() {
                 // Transmission successful. Thank you.
               </div>
             ) : (
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={(e) => void handleSubmit(e)}>
                 <div style={{ marginBottom: "1rem" }}>
                   <select
                     value={issueType}
@@ -101,6 +101,7 @@ export function ReportModal() {
                 <div style={{ marginBottom: "1.5rem" }}>
                   <textarea
                     required
+                    maxLength={1000}
                     rows={4}
                     value={userNote}
                     onChange={(e) => setUserNote(e.target.value)}

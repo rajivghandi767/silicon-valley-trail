@@ -3,14 +3,14 @@ from .models import Location, ReportedIssue
 
 
 @admin.register(Location)
-class LocationAdmin(admin.ModelAdmin):
+class LocationAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = ("sequence_in_journey", "name", "latitude", "longitude")
     ordering = ("sequence_in_journey",)
     search_fields = ("name",)
 
 
 @admin.register(ReportedIssue)
-class ReportedIssueAdmin(admin.ModelAdmin):
+class ReportedIssueAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = ("issue_type", "created_at", "resolved")
     list_filter = ("resolved", "issue_type")
     search_fields = ("user_note",)
