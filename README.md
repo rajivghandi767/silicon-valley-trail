@@ -61,7 +61,7 @@ Traditional text-based games heavily rely on SQL database row-locking to maintai
 
 Deployments are fully automated via GitHub Actions (`.github/workflows`).
 
-1. **Build & Tag:** The GitHub Actions runner executes the full `Test Suite` (`python manage.py test`, `Dockerfile.prod` + `gunicorn --check-config`, `npm ci`, `eslint`, `tsc -b && vite build`, and `vitest`), builds the production `svt-backend` and multi-stage `svt-nginx` (embedding the compiled React SPA) Docker images, and pushes them to the GitHub Container Registry (`ghcr.io`) tagged with the exact Git commit hash and run number.
+1. **Build & Tag:** The GitHub Actions runner executes the full `Test Suite` (`python manage.py test`, `Dockerfile.prod` + `gunicorn --check-config`, `npm ci`, `eslint`, `tsc -b && vite build`, and `vitest`), builds the production `svt-backend` and multi-stage `svt-nginx` (embedding the compiled React SPA) Docker images, and pushes them to the GitHub Container Registry (`ghcr.io`) tagged with the run number and `latest`.
 2. **Secret Injection:** The pipeline authenticates dynamically with **HashiCorp Vault** to securely pull and inject environment variables into the host agent.
 3. **Event-Driven Orchestration:** Immediately after `Build & Push Images` succeeds on `main`, the self-hosted Pi runner pulls the new images and executes host-serialized (`flock`) rolling restarts via Docker Compose (`docker compose up -d --wait`) with automatic healthcheck rollback and Discord notifications.
 
